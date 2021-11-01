@@ -2,12 +2,17 @@ package de.dofe.ev3.sensor;
 
 import lejos.hardware.sensor.BaseSensor;
 import lejos.hardware.sensor.SensorMode;
+import lombok.Getter;
+import lombok.Setter;
 
 public abstract class Sensor<T extends BaseSensor> {
 
     private final float[] sample;
+    @Getter
     private final T sensor;
-    private final SensorMode sensorMode;
+    @Getter
+    @Setter
+    protected SensorMode sensorMode;
 
     protected Sensor(T sensor) {
         this.sensor = sensor;
@@ -15,24 +20,14 @@ public abstract class Sensor<T extends BaseSensor> {
         this.sample = new float[this.sensorMode.sampleSize()];
     }
 
-    public void close() {
-        this.sensor.close();
-    }
-
-    protected T getSensor() {
-        return this.sensor;
-    }
-
-    protected abstract SensorMode getSensorMode(T sensor);
-
-    protected float getWert() {
+    protected float getSample() {
         this.sensorMode.fetchSample(sample, 0);
         return sample[0];
     }
 
-    public boolean isAktiv() {
-        return this.isAktiv(this.getWert());
+    public boolean isActive() {
+        return this.isActive(this.getSample());
     }
 
-    protected abstract boolean isAktiv(float wert);
+    protected abstract boolean isActive(float value);
 }

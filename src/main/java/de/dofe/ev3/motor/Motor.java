@@ -2,37 +2,31 @@ package de.dofe.ev3.motor;
 
 import lejos.hardware.motor.EV3LargeRegulatedMotor;
 import lejos.hardware.port.Port;
-import lejos.robotics.RegulatedMotor;
 import lombok.Getter;
 
-public class Motor {
+public class Motor extends EV3LargeRegulatedMotor {
 
     @Getter
-    private final RegulatedMotor regulatedMotor;
-    @Getter
-    private final Einbaurichtung einbaurichtung;
+    private final MountDirection mountDirection;
 
-    public Motor(Port port, Einbaurichtung einbaurichtung) {
-        this.regulatedMotor = new EV3LargeRegulatedMotor(port);
-        this.einbaurichtung = einbaurichtung;
+    public Motor(Port port, MountDirection mountDirection) {
+        super(port);
+        this.mountDirection = mountDirection;
     }
 
+    @Override
     public void backward() {
-        if (this.einbaurichtung == Einbaurichtung.REGULAER)
-            this.regulatedMotor.backward();
+        if (this.mountDirection == MountDirection.REGULAR)
+            this.backward();
         else
-            this.regulatedMotor.forward();
+            this.forward();
     }
 
+    @Override
     public void forward() {
-        if (this.einbaurichtung == Einbaurichtung.REGULAER)
-            this.regulatedMotor.forward();
+        if (this.mountDirection == MountDirection.REGULAR)
+            this.forward();
         else
-            this.regulatedMotor.backward();
-    }
-
-    protected void finalize() throws Throwable {
-        super.finalize();
-        this.regulatedMotor.close();
+            this.backward();
     }
 }

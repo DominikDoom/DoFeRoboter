@@ -1,78 +1,61 @@
 package de.dofe.ev3;
 
-import de.dofe.ev3.achse.DualPositionAchse;
-import de.dofe.ev3.achse.MultiPositionAchse;
-import de.dofe.ev3.motor.Einbaurichtung;
-import de.dofe.ev3.positions.Position2D;
-import de.dofe.ev3.positions.Position3D;
-import de.dofe.ev3.reifen.Reifen;
-import de.dofe.ev3.sensor.LichtSensor;
-import de.dofe.ev3.sensor.TouchSensor;
-import de.dofe.ev3.zahnrad.Zahnrad;
-import de.dofe.ev3.zahnrad.Zahnradsatz;
-import lejos.hardware.port.MotorPort;
-import lejos.hardware.port.SensorPort;
+import de.dofe.ev3.axis.DualPositionAxis;
+import de.dofe.ev3.axis.MultiPositionAxis;
+import de.dofe.ev3.factory.RobotFactory;
+import de.dofe.ev3.position.Position2D;
+import de.dofe.ev3.position.Position3D;
 import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
+import lombok.Getter;
+
+import static de.dofe.ev3.factory.RobotFactory.Axes;
 
 public class Roboter {
+
+    @Getter
     private Position3D currentPosition;
 
-    private final MultiPositionAchse xAchse = new MultiPositionAchse(new TouchSensor(SensorPort.S1), MotorPort.C, Einbaurichtung.UMGEKEHRT, new Reifen(40.0), new Zahnradsatz(Zahnrad.KLEIN, Zahnrad.GROSS));
-    private final MultiPositionAchse yAchse = new MultiPositionAchse(new LichtSensor(SensorPort.S2), MotorPort.B, Einbaurichtung.UMGEKEHRT, new Reifen(43.2), new Zahnradsatz(Zahnrad.KLEIN, Zahnrad.GROSS));
-    private final DualPositionAchse zAchse = new DualPositionAchse(null, MotorPort.A, Einbaurichtung.REGULAER, null);
+    private final MultiPositionAxis xAxis;
+    private final MultiPositionAxis yAxis;
+    private final DualPositionAxis zAxis;
 
     public Roboter() {
-
+        RobotFactory factory = RobotFactory.getInstance();
+        xAxis = (MultiPositionAxis) factory.getAxis(Axes.X);
+        yAxis = (MultiPositionAxis) factory.getAxis(Axes.Y);
+        zAxis = (DualPositionAxis) factory.getAxis(Axes.Z);
     }
 
-    public void entfernePapier() throws InterruptedException {
-        zAchse.deaktiviere();
-        yAchse.getMotor().getRegulatedMotor().setSpeed(Integer.MAX_VALUE);
-        yAchse.backward(2000);
+    public void removePaper() {
+        zAxis.deactivate();
+        yAxis.getMotor().setSpeed(Integer.MAX_VALUE);
+        yAxis.backward(2000);
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        System.exit(0);
-    }
-
-    public Position3D getCurrentPosition() {
-        return this.currentPosition;
-    }
-
-    public MultiPositionAchse getXAchse() {
-        return this.xAchse;
-    }
-
-    public MultiPositionAchse getYAchse() {
-        return this.yAchse;
-    }
-
-    protected void moveToHomePosition() throws InterruptedException {
-        zAchse.deaktiviere();
-        xAchse.getMotor().getRegulatedMotor().setSpeed(50);
-        while (!xAchse.getSensor().isAktiv()) {
-            xAchse.backward();
+    protected void moveToHomePosition() {
+        zAxis.deactivate();
+        xAxis.getMotor().setSpeed(50);
+        while (!xAxis.getSensor().isActive()) {
+            xAxis.getMotor().backward();
         }
-        xAchse.getMotor().getRegulatedMotor().stop();
-        xAchse.forward();
+        xAxis.getMotor().stop();
+        xAxis.getMotor().forward();
         Delay.msDelay(200);
-        xAchse.getMotor().getRegulatedMotor().stop();
+        xAxis.getMotor().stop();
         this.currentPosition = new Position3D(0, 0, false);
         this.resetTachoCounts();
     }
 
-    public void moveToPosition(Position2D position2D, int mmSec) throws InterruptedException {
-        this.moveToPosition(new Position3D(position2D, this.zAchse.isAktiv()), mmSec);
+    public void moveToPosition(Position2D position2D, int mmSec) {
+        this.moveToPosition(new Position3D(position2D, this.zAxis.isActive()), mmSec);
     }
 
-    public void moveToPosition(Position3D position, int mmSec) throws InterruptedException {
+    public void moveToPosition(Position3D position, int mmSec) {
         if (position.isZ())
-            this.zAchse.aktiviere();
+            this.zAxis.activate();
         else
-            this.zAchse.deaktiviere();
+            this.zAxis.deactivate();
 
         double deltaX = position.getX() - currentPosition.getX();
         double deltaY = position.getY() - currentPosition.getY();
@@ -80,48 +63,34 @@ public class Roboter {
 
         double time = hypo / mmSec;
 
-        xAchse.getMotor().getRegulatedMotor().synchronizeWith(new RegulatedMotor[]{yAchse.getMotor().getRegulatedMotor()});
+        xAxis.getMotor().synchronizeWith(new RegulatedMotor[]{yAxis.getMotor()});
 
-        //xAchse.getMotor().getRegulatedMotor().setSpeed((int) (deltaX / time));
-        //yAchse.getMotor().getRegulatedMotor().setSpeed((int) (deltaY / time));
+        this.xAxis.setSpeed(deltaX / time);
+        this.xAxis.setSpeed(deltaY / time);
 
-        this.xAchse.setSpeedMM(deltaX / time);
-        this.xAchse.setSpeedMM(deltaY / time);
+        xAxis.getMotor().startSynchronization();
 
-        xAchse.getMotor().getRegulatedMotor().startSynchronization();
+        xAxis.rotateMm(deltaX);
+        yAxis.rotateMm(deltaY);
 
-        xAchse.rotateMm(deltaX);
-        yAchse.rotateMm(deltaY);
+        xAxis.getMotor().endSynchronization();
 
-        xAchse.getMotor().getRegulatedMotor().endSynchronization();
+        xAxis.getMotor().waitComplete();
+        yAxis.getMotor().waitComplete();
 
-        xAchse.getMotor().getRegulatedMotor().waitComplete();
-        yAchse.getMotor().getRegulatedMotor().waitComplete();
-
-        this.currentPosition = new Position3D(xAchse.getPositionFromTachoCount(), yAchse.getPositionFromTachoCount(), zAchse.isAktiv());
-
+        this.currentPosition = new Position3D(xAxis.getPositionFromTachoCount(), yAxis.getPositionFromTachoCount(), zAxis.isActive());
     }
 
     private void resetTachoCounts() {
-        this.xAchse.resetTachoCount();
-        this.yAchse.resetTachoCount();
-        if (xAchse.getTachoCount() != 0 || yAchse.getTachoCount() != 0)
-            throw new RuntimeException("Couldn't reset TachoCount");
+        this.xAxis.getMotor().resetTachoCount();
+        this.yAxis.getMotor().resetTachoCount();
+        if (xAxis.getMotor().getTachoCount() != 0 || yAxis.getMotor().getTachoCount() != 0)
+            throw new IllegalStateException("Couldn't reset TachoCount");
     }
 
     public void stop() {
-        xAchse.getMotor().getRegulatedMotor().stop();
-        yAchse.getMotor().getRegulatedMotor().stop();
-        zAchse.getMotor().getRegulatedMotor().stop();
+        xAxis.getMotor().stop();
+        yAxis.getMotor().stop();
+        zAxis.getMotor().stop();
     }
-
-    /* public void zeichneGeometrischeFigur(GeometrischeFigur geo, int mmSec) throws InterruptedException {
-        this.zAchse.deaktiviere();
-        this.moveToPosition(geo.getPositions().get(0), 1000);
-        this.zAchse.aktiviere();
-        for (Position2D pos : geo.getPositions()) {
-            this.moveToPosition(pos, mmSec);
-        }
-        this.zAchse.deaktiviere();
-    } */
 }
