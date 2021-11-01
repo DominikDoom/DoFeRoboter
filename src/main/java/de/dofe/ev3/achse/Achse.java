@@ -5,8 +5,6 @@ import de.dofe.ev3.motor.Einbaurichtung;
 import de.dofe.ev3.motor.Motor;
 import de.dofe.ev3.reifen.Reifen;
 import de.dofe.ev3.sensor.Sensor;
-import lejos.hardware.Button;
-import lejos.hardware.lcd.LCD;
 import lejos.hardware.port.Port;
 import lombok.Getter;
 
