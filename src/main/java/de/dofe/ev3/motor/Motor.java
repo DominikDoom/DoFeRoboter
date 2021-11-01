@@ -17,16 +17,16 @@ public class Motor extends EV3LargeRegulatedMotor {
     @Override
     public void backward() {
         if (this.mountDirection == MountDirection.REGULAR)
-            this.backward();
+            super.backward();
         else
-            this.forward();
+            super.forward();
     }
 
     @Override
     public void forward() {
         if (this.mountDirection == MountDirection.REGULAR)
-            this.forward();
+            super.forward();
         else
-            this.backward();
+            super.backward();
     }
 }

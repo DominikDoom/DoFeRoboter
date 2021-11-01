@@ -11,6 +11,10 @@ public enum Gear implements ITransmissionUnit {
     MEDIUM(24),
     SMALL(12);
 
-    @Getter
     private final int size;
+
+    @Override
+    public double getSize() {
+        return size;
+    }
 }
