@@ -1,10 +1,7 @@
 package de.dofe.ev3;
 
 import de.dofe.ev3.positions.Position2D;
-import lejos.hardware.Button;
 import lejos.hardware.Sound;
-import lejos.hardware.lcd.LCD;
-import lejos.utility.Delay;
 
 public class Main {
     public static void main(String[] args) {
