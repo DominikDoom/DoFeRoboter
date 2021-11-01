@@ -5,6 +5,11 @@ import lejos.hardware.Sound;
 
 public class Main {
 
+    /**
+     * Entry point for the program on the EV3 brick.
+     *
+     * @param args The command line arguments.
+     */
     public static void main(String[] args) {
         Robot robot = new Robot();
         Sound.beep();

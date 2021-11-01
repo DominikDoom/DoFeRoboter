@@ -13,6 +13,9 @@ import static de.dofe.ev3.factory.RobotFactory.Axes;
 
 public class Robot {
 
+    /**
+     * The current position of the tower in relation to the belt & paper
+     */
     @Getter
     private Position3D currentPosition;
 
@@ -20,6 +23,9 @@ public class Robot {
     private final MultiPositionAxis yAxis;
     private final DualPositionAxis zAxis;
 
+    /**
+     * Initializes the Plott3r robot using the {@link RobotFactory}.
+     */
     public Robot() {
         RobotFactory factory = RobotFactory.getInstance();
         xAxis = (MultiPositionAxis) factory.getAxis(Axes.X);
@@ -27,12 +33,20 @@ public class Robot {
         zAxis = (DualPositionAxis) factory.getAxis(Axes.Z);
     }
 
+    /**
+     * Removes the paper from the tray.
+     */
     public void removePaper() {
         zAxis.deactivate();
         yAxis.getMotor().setSpeed(Integer.MAX_VALUE);
         yAxis.backward(2000);
     }
 
+    /**
+     * Resets the x position using the touch sensor to detect the bound.
+     * <p>
+     * Initializes {@link #currentPosition} to [0 , 0, false] afterwards.
+     */
     protected void moveToHomePosition() {
         zAxis.deactivate();
         xAxis.getMotor().setSpeed(50);
@@ -47,10 +61,23 @@ public class Robot {
         this.resetTachoCounts();
     }
 
+    /**
+     * Moves to a specified {@link Position2D}.
+     *
+     * @param position2D The [x, y] position to move to.
+     * @param mmSec      The movement speed in mm/s.
+     */
     public void moveToPosition(Position2D position2D, int mmSec) {
         this.moveToPosition(new Position3D(position2D, this.zAxis.isActive()), mmSec);
     }
 
+    /**
+     * Moves to a specified {@link Position3D}.
+     * If z is active, lower it before moving to the coordinates.
+     *
+     * @param position The [x, y] position to move to.
+     * @param mmSec    The movement speed in mm/s.
+     */
     public void moveToPosition(Position3D position, int mmSec) {
         if (position.isZ())
             this.zAxis.activate();
@@ -81,6 +108,10 @@ public class Robot {
         this.currentPosition = new Position3D(xAxis.getPositionFromTachoCount(), yAxis.getPositionFromTachoCount(), zAxis.isActive());
     }
 
+    /**
+     * Resets the tacho count (degrees of rotation since start)
+     * for all axes.
+     */
     private void resetTachoCounts() {
         this.xAxis.getMotor().resetTachoCount();
         this.yAxis.getMotor().resetTachoCount();
@@ -88,6 +119,9 @@ public class Robot {
             throw new IllegalStateException("Couldn't reset TachoCount");
     }
 
+    /**
+     * Stops all motors.
+     */
     public void stop() {
         xAxis.getMotor().stop();
         yAxis.getMotor().stop();
