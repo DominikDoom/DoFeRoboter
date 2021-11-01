@@ -11,7 +11,7 @@ import lombok.Getter;
 
 import static de.dofe.ev3.factory.RobotFactory.Axes;
 
-public class Roboter {
+public class Robot {
 
     @Getter
     private Position3D currentPosition;
@@ -20,7 +20,7 @@ public class Roboter {
     private final MultiPositionAxis yAxis;
     private final DualPositionAxis zAxis;
 
-    public Roboter() {
+    public Robot() {
         RobotFactory factory = RobotFactory.getInstance();
         xAxis = (MultiPositionAxis) factory.getAxis(Axes.X);
         yAxis = (MultiPositionAxis) factory.getAxis(Axes.Y);

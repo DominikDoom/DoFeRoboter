@@ -6,10 +6,10 @@ import lejos.hardware.Sound;
 public class Main {
 
     public static void main(String[] args) {
-        Roboter roboter = new Roboter();
+        Robot robot = new Robot();
         Sound.beep();
-        roboter.moveToHomePosition();
+        robot.moveToHomePosition();
 
-        roboter.moveToPosition(new Position2D(60, 60), 20);
+        robot.moveToPosition(new Position2D(60, 60), 20);
     }
 }
