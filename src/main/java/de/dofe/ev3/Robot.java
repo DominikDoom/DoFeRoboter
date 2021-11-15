@@ -11,6 +11,11 @@ import lombok.Getter;
 
 import static de.dofe.ev3.factory.RobotFactory.Axes;
 
+/**
+ * This class initializes the robot and provides methods to control it.
+ * <p>
+ * The structure of the robot is defined in the RobotFactory.
+ */
 public class Robot {
 
     /**
@@ -40,6 +45,21 @@ public class Robot {
         zAxis.deactivate();
         yAxis.getMotor().setSpeed(Integer.MAX_VALUE);
         yAxis.backward(2000);
+    }
+
+    /**
+     * Moves the paper to the base position in the tray.
+     */
+    public void preparePaper() {
+        if (yAxis.getSensor().isActive()) {
+            while (yAxis.getSensor().isActive()) {
+                yAxis.getMotor().backward();
+            }
+            yAxis.getMotor().stop();
+        } else {
+            Delay.msDelay(500);
+            preparePaper();
+        }
     }
 
     /**
