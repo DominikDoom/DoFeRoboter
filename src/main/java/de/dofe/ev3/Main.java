@@ -22,6 +22,7 @@ public class Main {
     // TODO Parse simple SVGs
     // TODO Geometry classes (Lines, shapes, ...)
     // TODO Advanced geometry (Curves, filled shapes to lines, transforms, ...)
+    // TODO Convert absolute path commands to relative or vice versa
 
     // TODO Prepare paper in tray
     // TODO Define drawing space coordinate system
