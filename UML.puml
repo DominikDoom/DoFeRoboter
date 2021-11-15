@@ -1,0 +1,104 @@
+@startuml
+class de.dofe.ev3.axis.DualPositionAxis {
+- boolean active
++ void activate()
++ void deactivate()
+- void toggle()
+}
+class de.dofe.ev3.position.Position2D {
+- double x
+- double y
+}
+class de.dofe.ev3.position.Position3D {
+- boolean z
+}
+class de.dofe.ev3.motor.Motor {
+- MountDirection mountDirection
++ void backward()
++ void forward()
+}
+abstract class de.dofe.ev3.axis.Axis {
+# Wheel driveUnit
+- Motor motor
+- Sensor<? extends BaseSensor> sensor
+- ITransmission transmissionUnits
++ void setSpeed(double)
+# int mmToDegree(double)
+}
+abstract class de.dofe.ev3.sensor.Sensor {
+- float[] sample
+- T sensor
+# SensorMode sensorMode
+# float getSample()
++ boolean isActive()
+# {abstract}boolean isActive(float)
+}
+class de.dofe.ev3.Robot {
+- Position3D currentPosition
+- MultiPositionAxis xAxis
+- MultiPositionAxis yAxis
+- DualPositionAxis zAxis
++ void removePaper()
++ void preparePaper()
+# void moveToHomePosition()
++ void moveToPosition(Position2D,int)
++ void moveToPosition(Position3D,int)
+- void resetTachoCounts()
++ void stop()
+}
+class de.dofe.ev3.transmission.unit.Wheel {
+- double diameter
+- double circumference
++ double getSize()
+}
+class de.dofe.ev3.axis.MultiPositionAxis {
++ void backward(long)
++ void forward(long)
++ double getPositionFromTachoCount()
++ void rotateMm(double)
+}
+interface de.dofe.ev3.transmission.ITransmission {
+~ double getRatio()
+~ boolean isReversing()
+}
+class de.dofe.ev3.Main {
++ {static} void main(String[])
+}
+class de.dofe.ev3.sensor.TouchSensor {
+# boolean isActive(float)
+}
+class de.dofe.ev3.sensor.LightSensor {
+- {static} float EPSILON
+- float threshold
+# boolean isActive(float)
+}
+class de.dofe.ev3.transmission.TransmissionSet {
++ double getRatio()
++ boolean isReversing()
+}
+interface de.dofe.ev3.transmission.unit.ITransmissionUnit {
+~ double getSize()
+}
+class de.dofe.ev3.factory.RobotFactory {
+- MultiPositionAxis xAxis
+- MultiPositionAxis yAxis
+- DualPositionAxis zAxis
++ {static} RobotFactory getInstance()
++ Axis getAxis(Axes)
+}
+class de.dofe.ev3.factory.RobotFactory.InstanceHolder {
+- {static} RobotFactory instance
+}
+
+
+de.dofe.ev3.axis.Axis <|-- de.dofe.ev3.axis.DualPositionAxis
+de.dofe.ev3.position.Position2D <|-- de.dofe.ev3.position.Position3D
+lejos.hardware.motor.EV3LargeRegulatedMotor <|-- de.dofe.ev3.motor.Motor
+de.dofe.ev3.transmission.unit.ITransmissionUnit <|.. de.dofe.ev3.transmission.unit.Wheel
+de.dofe.ev3.axis.Axis <|-- de.dofe.ev3.axis.MultiPositionAxis
+de.dofe.ev3.sensor.Sensor <|-- de.dofe.ev3.sensor.TouchSensor
+de.dofe.ev3.sensor.Sensor <|-- de.dofe.ev3.sensor.LightSensor
+de.dofe.ev3.transmission.ITransmission <|.. de.dofe.ev3.transmission.TransmissionSet
+java.util.ArrayList <|-- de.dofe.ev3.transmission.TransmissionSet
+de.dofe.ev3.factory.RobotFactory +.. de.dofe.ev3.factory.RobotFactory.InstanceHolder
+@enduml
