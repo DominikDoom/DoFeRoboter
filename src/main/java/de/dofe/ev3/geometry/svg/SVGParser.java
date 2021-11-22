@@ -35,9 +35,7 @@ import java.util.regex.Pattern;
  */
 public class SVGParser {
 
-    private SVGParser() {
-        throw new IllegalStateException("Utility class");
-    }
+    private Position2D lastPosition = new Position2D(0, 0);
 
     /**
      * Parses an SVG path string into a list of
@@ -46,7 +44,7 @@ public class SVGParser {
      * @param pathData The path data to parse
      * @return A list of path commands
      */
-    public static List<PathCommand> parsePath(String pathData) {
+    public List<PathCommand> parsePath(String pathData) {
         ArrayList<PathCommand> pathCommands = new ArrayList<>();
 
         // Split path data into separate commands
@@ -58,7 +56,7 @@ public class SVGParser {
             // Get command type
             char commandType = command.charAt(0);
             boolean isRelative = Character.isLowerCase(commandType);
-            // Remove command type
+            // Remove command type from path string
             command = command.substring(1);
 
             switch (commandType) {
@@ -68,41 +66,49 @@ public class SVGParser {
                     break;
                 case 'L':
                 case 'l':
-                    pathCommands.addAll(parsePolyLine(command));
+                    pathCommands.addAll(parsePolyLine(command, isRelative));
                     break;
                 default:
-                    throw new IllegalArgumentException("Unknown path command: " + commandType);
+                    //throw new IllegalArgumentException("Unknown path command: " + commandType);
             }
 
-            System.out.println(command);
+            System.out.println(commandType + command);
         }
 
         return pathCommands;
     }
 
-    private static Move parseMove(String command, boolean relative) {
-        double x = Double.parseDouble(command.split(",")[0]);
-        double y = Double.parseDouble(command.split(",")[1]);
+    private Move parseMove(String command, boolean relative) {
+        Position2D toMove = getNewPos(command, relative);
 
-        if (relative) {
-            // TODO relative move
-            return null;
-        } else {
-            return new Move(new Position2D(x, y));
-        }
+        lastPosition = toMove;
+        return new Move(toMove);
     }
 
-    private static ArrayList<Line> parsePolyLine(String command) {
+    private ArrayList<Line> parsePolyLine(String command, boolean relative) {
         ArrayList<Line> out = new ArrayList<>();
 
         String[] segments = command.split(" ");
         for (String segment : segments) {
-            double x = Double.parseDouble(segment.split(",")[0]);
-            double y = Double.parseDouble(segment.split(",")[1]);
+            Position2D toMove = getNewPos(segment, relative);
 
-            // TODO add line & get start position from somewhere
+            out.add(new Line(lastPosition, toMove));
+            lastPosition = toMove;
         }
 
         return out;
+    }
+
+    private Position2D getNewPos(String coordsPair, boolean relative) {
+        double x = Double.parseDouble(coordsPair.split(",")[0]);
+        double y = Double.parseDouble(coordsPair.split(",")[1]);
+
+        Position2D toMove;
+        if (relative)
+            toMove = new Position2D(lastPosition.getX() + x, lastPosition.getY() + y);
+        else
+            toMove = new Position2D(x, y);
+
+        return toMove;
     }
 }

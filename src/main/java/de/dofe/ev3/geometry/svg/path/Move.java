@@ -1,13 +1,14 @@
 package de.dofe.ev3.geometry.svg.path;
 
 import de.dofe.ev3.position.Position2D;
+import de.dofe.ev3.position.Position3D;
 
 /**
  * A move without drawing
  */
 public class Move implements PathCommand {
 
-    private Position2D pos;
+    private final Position2D pos;
 
     /**
      * Absolute move
@@ -26,7 +27,7 @@ public class Move implements PathCommand {
     }
 
     @Override
-    public void execute() {
-
+    public Position3D getNextPos() {
+        return new Position3D(pos.getX(), pos.getY(), false);
     }
 }

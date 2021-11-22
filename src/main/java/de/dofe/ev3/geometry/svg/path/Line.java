@@ -1,14 +1,15 @@
 package de.dofe.ev3.geometry.svg.path;
 
 import de.dofe.ev3.position.Position2D;
+import de.dofe.ev3.position.Position3D;
 
 /**
  * A straight line from one point to another.
  */
 public class Line implements PathCommand {
 
-    private Position2D start;
-    private Position2D end;
+    private final Position2D start;
+    private final Position2D end;
 
     /**
      * Absolute coordinates.
@@ -29,7 +30,7 @@ public class Line implements PathCommand {
     }
 
     @Override
-    public void execute() {
-
+    public Position3D getNextPos() {
+        return new Position3D(end.getX(), end.getY(), true);
     }
 }
