@@ -1,114 +1,127 @@
 package de.dofe.ev3.geometry.svg;
 
-import de.dofe.ev3.geometry.svg.path.Line;
-import de.dofe.ev3.geometry.svg.path.Move;
-import de.dofe.ev3.geometry.svg.path.PathCommand;
-import de.dofe.ev3.position.Position2D;
+import de.dofe.ev3.geometry.svg.path.PathCommandType;
+import de.dofe.ev3.geometry.svg.path.PathComponent;
 
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Parser for simple SVG data.
- * <p>
- * SVG spec from <a href="https://de.wikipedia.org/wiki/Scalable_Vector_Graphics#Elemente">Wikipedia</a>
- * <br>
- * <b>Path commands:</b>
- * <ul>
- *     <li>M x y - move to x,y
- *     <li>L x y - line to x,y
- *     <li>H x - horizontal line to x
- *     <li>V y - vertical line to y
- *     <li>C x1 y1 x2 y2 x y - cubic bezier curve to x,y with control points x1,y1 and x2,y2
- *     <li>S x2 y2 x y - smooth cubic bezier curve to x,y with control points x2,y2
- *     <li>Q x1 y1 x y - quadratic bezier curve to x,y with control point x1,y1
- *     <li>T x y - smooth quadratic bezier curve to x,y
- *     <li>R x y - catmull rom curve to x,y
- *     <li>A rx ry x-axis-rotation large-arc-flag sweep-flag x y - elliptical arc to x,y
- *     <li>Z - close path
- * </ul>
- *
- * <b>Capital letters -> Absolute coordinates</b><br>
- * <b>Small letters -> Relative coordinates</b>
- */
 public class SVGParser {
 
-    private Position2D lastPosition = new Position2D(0, 0);
+    private SVGParser() {
+        throw new IllegalStateException("Utility class");
+    }
 
-    /**
-     * Parses an SVG path string into a list of
-     * sequentially executable path commands.
-     *
-     * @param pathData The path data to parse
-     * @return A list of path commands
-     */
-    public List<PathCommand> parsePath(String pathData) {
-        ArrayList<PathCommand> pathCommands = new ArrayList<>();
+    private static final String PARSE_ERROR = "Malformed path (first error at %d)";
 
-        // Split path data into separate commands
-        Pattern r = Pattern.compile("([MLHVCSQTRA] *-?\\d+\\.?\\d*(?: *,? *-?\\d+\\.?\\d*)*+|Z)", Pattern.CASE_INSENSITIVE);
-        Matcher m = r.matcher(pathData);
+    private static final String K_COMMAND_TYPE_REGEX = "^[\t\n\f\r ]*([MLHVZCSQTAmlhvzcsqta])[\t\n\f\r ]*";
+    private static final String K_FLAG_REGEX = "^[01]";
+    private static final String K_NUMBER_REGEX = "^[+-]?(([0-9]*\\.[0-9]+)|([0-9]+\\.)|([0-9]+))([eE][+-]?[0-9]+)?";
+    private static final String K_COORDINATE_REGEX = K_NUMBER_REGEX;
+    private static final String K_COMMA_WSP = "^(([\t\n\f\r ]+,?[\t\n\f\r ]*)|(,[\t\n\f\r ]*))";
 
-        while (m.find()) {
-            String command = m.group(1);
-            // Get command type
-            char commandType = command.charAt(0);
-            boolean isRelative = Character.isLowerCase(commandType);
-            // Remove command type from path string
-            command = command.substring(1);
+    private static final HashMap<String, String[]> grammar;
 
-            switch (commandType) {
-                case 'M':
-                case 'm':
-                    pathCommands.add(parseMove(command, isRelative));
-                    break;
-                case 'L':
-                case 'l':
-                    pathCommands.addAll(parsePolyLine(command, isRelative));
-                    break;
-                default:
-                    //throw new IllegalArgumentException("Unknown path command: " + commandType);
+    static {
+        grammar = new HashMap<>();
+        grammar.put("M", new String[]{K_COORDINATE_REGEX, K_COORDINATE_REGEX});
+        grammar.put("L", new String[]{K_COORDINATE_REGEX, K_COORDINATE_REGEX});
+        grammar.put("H", new String[]{K_COORDINATE_REGEX});
+        grammar.put("V", new String[]{K_COORDINATE_REGEX});
+        grammar.put("Z", new String[]{});
+        grammar.put("C", new String[]{K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX});
+        grammar.put("S", new String[]{K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX});
+        grammar.put("Q", new String[]{K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX});
+        grammar.put("T", new String[]{K_COORDINATE_REGEX, K_COORDINATE_REGEX});
+        grammar.put("A", new String[]{K_NUMBER_REGEX, K_NUMBER_REGEX, K_COORDINATE_REGEX, K_FLAG_REGEX, K_FLAG_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX});
+    }
+
+    private static LinkedHashMap<Integer, ArrayList<ArrayList<String>>> components(String type, String path, int cursor) throws ParseException {
+        final String[] expectedRegexList = grammar.get(type.toUpperCase());
+
+        final ArrayList<ArrayList<String>> components = new ArrayList<>();
+        while (cursor <= path.length()) {
+            final ArrayList<String> component = new ArrayList<>();
+            component.add(type);
+
+            for (String regex : expectedRegexList) {
+                Matcher matcher = Pattern.compile(regex).matcher(path.substring(cursor));
+                String match = matcher.find() ? matcher.group(0) : null;
+
+                if (match != null) {
+                    component.add(match);
+                    cursor += match.length();
+
+                    Matcher wsMatcher = Pattern.compile(K_COMMA_WSP).matcher(path.substring(cursor));
+                    String ws = wsMatcher.find() ? wsMatcher.group() : null;
+                    if (ws != null) {
+                        cursor += ws.length();
+                    }
+                } else if (component.size() == 1) {
+                    LinkedHashMap<Integer, ArrayList<ArrayList<String>>> out = new LinkedHashMap<>();
+                    out.put(cursor, components);
+                    return out;
+                } else {
+                    throw new ParseException(String.format(PARSE_ERROR, cursor), cursor);
+                }
             }
 
-            System.out.println(commandType + command);
+            components.add(component);
+            if (expectedRegexList.length == 0) {
+                LinkedHashMap<Integer, ArrayList<ArrayList<String>>> out = new LinkedHashMap<>();
+                out.put(cursor, components);
+                return out;
+            }
+            if (type.equals("m"))
+                type = "l";
+            else if (type.equals("M"))
+                type = "L";
         }
 
-        return pathCommands;
+        throw new ParseException(String.format(PARSE_ERROR, cursor), cursor);
     }
 
-    private Move parseMove(String command, boolean relative) {
-        Position2D toMove = getNewPos(command, relative);
+    public static List<PathComponent> parse(String path) throws ParseException {
+        int cursor = 0;
+        ArrayList<PathComponent> tokens = new ArrayList<>();
 
-        lastPosition = toMove;
-        return new Move(toMove);
-    }
+        while (cursor < path.length()) {
+            Matcher matcher = Pattern.compile(K_COMMAND_TYPE_REGEX).matcher(path.substring(cursor));
+            String[] match = matcher.find()
+                    ? new String[]{matcher.group(0), matcher.group(1)}
+                    : null;
 
-    private ArrayList<Line> parsePolyLine(String command, boolean relative) {
-        ArrayList<Line> out = new ArrayList<>();
+            if (match != null) {
+                String command = match[1];
+                cursor += match[0].length();
 
-        String[] segments = command.split(" ");
-        for (String segment : segments) {
-            Position2D toMove = getNewPos(segment, relative);
+                LinkedHashMap<Integer, ArrayList<ArrayList<String>>> componentList = components(command, path, cursor);
+                cursor = componentList.keySet().iterator().next();
 
-            out.add(new Line(lastPosition, toMove));
-            lastPosition = toMove;
+                // Components to properly enum-mapped tokens
+                for (ArrayList<String> component : componentList.values().iterator().next()) {
+                    String type = component.get(0);
+                    boolean isZ = type.equalsIgnoreCase("Z");
+                    double[] values = isZ ? null : new double[component.size() - 1];
+                    Boolean relative = isZ ? null : Character.isLowerCase(type.charAt(0));
+
+                    if (!isZ) {
+                        for (int i = 1; i < component.size(); i++) {
+                            values[i - 1] = Double.parseDouble(component.get(i));
+                        }
+                    }
+                    tokens.add(new PathComponent(PathCommandType.get(type), values, relative));
+                }
+            } else {
+                throw new ParseException(String.format(PARSE_ERROR, cursor), cursor);
+            }
         }
 
-        return out;
-    }
-
-    private Position2D getNewPos(String coordsPair, boolean relative) {
-        double x = Double.parseDouble(coordsPair.split(",")[0]);
-        double y = Double.parseDouble(coordsPair.split(",")[1]);
-
-        Position2D toMove;
-        if (relative)
-            toMove = new Position2D(lastPosition.getX() + x, lastPosition.getY() + y);
-        else
-            toMove = new Position2D(x, y);
-
-        return toMove;
+        return tokens;
     }
 }
