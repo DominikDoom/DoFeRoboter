@@ -5,6 +5,7 @@ import de.dofe.ev3.axis.MultiPositionAxis;
 import de.dofe.ev3.factory.RobotFactory;
 import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
+import de.dofe.ev3.visualizer.Visualizer;
 import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
 import lombok.Getter;
@@ -32,6 +33,13 @@ public class Robot {
      * Initializes the Plott3r robot using the {@link RobotFactory}.
      */
     public Robot() {
+        if (this instanceof Visualizer) {
+            xAxis = null;
+            yAxis = null;
+            zAxis = null;
+            return;
+        }
+
         RobotFactory factory = RobotFactory.getInstance();
         xAxis = (MultiPositionAxis) factory.getAxis(Axes.X);
         yAxis = (MultiPositionAxis) factory.getAxis(Axes.Y);
