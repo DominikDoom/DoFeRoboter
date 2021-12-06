@@ -76,10 +76,7 @@ public class Visualizer extends Robot {
         this.currentPosition = new Position3D(scaledPosition.getX(), scaledPosition.getY(), zActive);
     }
 
-    private void resetTachoCounts() {
-        // Not needed in visualizer
-    }
-
+    @Override
     public void stop() {
         // Not needed in visualizer
     }

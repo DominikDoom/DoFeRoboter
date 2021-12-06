@@ -7,7 +7,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 public class GPanel extends JPanel {
-    private BufferedImage buffer;
+    private transient BufferedImage buffer;
 
     @Override
     public void invalidate() {
