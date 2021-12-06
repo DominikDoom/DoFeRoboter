@@ -36,7 +36,7 @@ public class PathComponent {
             case VERTICAL_LINE_TO:
                 //return new VerticalLine();
             case CLOSE_PATH:
-                //return new ClosePath();
+                return null;
             default:
                 throw new IllegalArgumentException("Unknown PathCommandType: " + this);
         }

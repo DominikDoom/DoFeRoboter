@@ -28,7 +28,9 @@ public class Main {
 
         Robot robot = new Visualizer();
 
-        if (!(robot instanceof Visualizer)) Sound.beep();
+        if (!(robot instanceof Visualizer))
+            Sound.beep();
+
         robot.moveToHomePosition();
 
         if (components != null) {

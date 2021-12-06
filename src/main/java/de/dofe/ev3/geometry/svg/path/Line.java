@@ -17,7 +17,7 @@ public class Line implements PathCommand {
     @Override
     public Position3D getNextPos(Position2D last) {
         if (relative)
-            return new Position3D(last.getX() + x, last.getY() + y, false);
+            return new Position3D(last.getX() + x, last.getY() + y, true);
 
         return new Position3D(x, y, true);
     }

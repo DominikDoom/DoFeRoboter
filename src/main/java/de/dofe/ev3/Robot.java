@@ -121,7 +121,7 @@ public class Robot {
         xAxis.getMotor().synchronizeWith(new RegulatedMotor[]{yAxis.getMotor()});
 
         this.xAxis.setSpeed(deltaX / time);
-        this.xAxis.setSpeed(deltaY / time);
+        this.yAxis.setSpeed(deltaY / time);
 
         xAxis.getMotor().startSynchronization();
 
