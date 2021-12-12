@@ -22,7 +22,11 @@ public class PathComponent {
                 if (args.length != 2) throw new IllegalArgumentException("Invalid number of arguments for LINE");
                 return new Line(args[0], args[1], relative);
             case CURVE_TO:
-                //return new Curve();
+                return new CubicBezier(
+                        args[0], args[1],
+                        args[2], args[3],
+                        args[4], args[5],
+                        relative);
             case SMOOTH_CURVE_TO:
                 //return new SmoothCurve();
             case QUAD_CURVE_TO:
