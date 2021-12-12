@@ -20,7 +20,7 @@ public class Visualizer extends Robot {
     private static final int A4_WIDTH = 2480;
     private static final int A4_HEIGHT = 3508;
     private static final float VIEW_SCALE_FACTOR = 0.25f;
-    private static final float DRAW_SCALE_FACTOR = 0.5f;
+    private static final float DRAW_SCALE_FACTOR = 0.6f;
 
     private final GPanel panel;
 

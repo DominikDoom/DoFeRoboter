@@ -55,5 +55,15 @@ public class GPanel extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.drawImage(getBuffer(), 0, 0, this);
+
+        // Draw legend
+        g.setColor(new Color(0, 0, 0, 204));
+        g.fillRect(0, getHeight() - 20, getWidth(), 20);
+        g.setColor(new Color(255, 255, 255, 204));
+        g.drawString("Move         Draw", 20, getHeight() - 5);
+        g.setColor(Color.BLUE);
+        g.fillRect(5, getHeight() - 15, 10, 10);
+        g.setColor(Color.RED);
+        g.fillRect(60, getHeight() - 15, 10, 10);
     }
 }
