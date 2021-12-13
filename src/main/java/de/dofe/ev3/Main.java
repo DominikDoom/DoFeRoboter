@@ -59,8 +59,7 @@ public class Main {
     }
 
     // TODO Load SVGs from file
-    // TODO Geometry classes (Lines, shapes, ...) - WIP
-    // TODO Advanced geometry (Curves, filled shapes to lines, transforms, ...)
+    // TODO Advanced geometry (non-cubic curves, transforms, ...)
 
     // TODO Prepare paper in tray
     // TODO Define drawing space coordinate system
