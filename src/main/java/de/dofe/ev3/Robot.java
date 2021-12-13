@@ -29,6 +29,8 @@ public class Robot {
     private final MultiPositionAxis yAxis;
     private final DualPositionAxis zAxis;
 
+    private static final float SCALE_FACTOR = 2;
+
     /**
      * Initializes the Plott3r robot using the {@link RobotFactory}.
      */
@@ -114,7 +116,7 @@ public class Robot {
 
         double deltaX = position.getX() - currentPosition.getX();
         double deltaY = position.getY() - currentPosition.getY();
-        double hypo = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        double hypo = Math.sqrt(deltaX * deltaX + deltaY * deltaY) * SCALE_FACTOR;
 
         double time = hypo / mmSec;
 
