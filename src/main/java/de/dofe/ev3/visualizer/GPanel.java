@@ -43,6 +43,7 @@ public class GPanel extends JPanel {
         Graphics2D g2d = bi.createGraphics();
         g2d.setColor(color);
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setStroke(new BasicStroke(2));
         g2d.drawLine(
                 (int) Math.round(start.getX()), (int) Math.round(start.getY()),
                 (int) Math.round(end.getX()), (int) Math.round(end.getY())
