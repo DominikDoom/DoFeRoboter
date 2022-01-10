@@ -10,6 +10,8 @@ import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
 import lombok.Getter;
 
+import static de.dofe.ev3.Paper.DPI;
+import static de.dofe.ev3.Paper.MM_PER_INCH;
 import static de.dofe.ev3.factory.RobotFactory.Axes;
 
 /**
@@ -29,7 +31,9 @@ public class Robot {
     private final MultiPositionAxis yAxis;
     private final DualPositionAxis zAxis;
 
-    private static final float SCALE_FACTOR = 2;
+    private double scaleFactor = 1;
+    private double offsetX = 0;
+    private double offsetY = 0;
 
     /**
      * Initializes the Plott3r robot using the {@link RobotFactory}.
@@ -72,6 +76,12 @@ public class Robot {
         }
     }
 
+    public void setScaling(double[] scaling) {
+        scaleFactor = scaling[0];
+        offsetX = scaling[1];
+        offsetY = scaling[2];
+    }
+
     /**
      * Resets the x position using the touch sensor to detect the bound.
      * <p>
@@ -109,14 +119,21 @@ public class Robot {
      * @param mmSec    The movement speed in mm/s.
      */
     public void moveToPosition(Position3D position, int mmSec) {
+        // Pixel to mm conversion
+        float dpiFactor = MM_PER_INCH / DPI; // mm/inch / dpi
+        Position3D scaledPosition = new Position3D(
+                (position.getX() + offsetX) * dpiFactor * scaleFactor,
+                (position.getY() + offsetY) * dpiFactor * scaleFactor,
+                position.isZ());
+
         if (position.isZ())
             this.zAxis.activate();
         else
             this.zAxis.deactivate();
 
-        double deltaX = position.getX() - currentPosition.getX();
-        double deltaY = position.getY() - currentPosition.getY();
-        double hypo = Math.sqrt(deltaX * deltaX + deltaY * deltaY) * SCALE_FACTOR;
+        double deltaX = scaledPosition.getX() - currentPosition.getX();
+        double deltaY = scaledPosition.getY() - currentPosition.getY();
+        double hypo = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
         double time = hypo / mmSec;
 
@@ -156,5 +173,17 @@ public class Robot {
         xAxis.getMotor().stop();
         yAxis.getMotor().stop();
         zAxis.getMotor().stop();
+    }
+
+    public double getScaleFactor() {
+        return scaleFactor;
+    }
+
+    public double getOffsetX() {
+        return offsetX;
+    }
+
+    public double getOffsetY() {
+        return offsetY;
     }
 }

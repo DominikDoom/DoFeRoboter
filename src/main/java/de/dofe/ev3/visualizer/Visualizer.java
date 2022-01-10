@@ -7,6 +7,8 @@ import de.dofe.ev3.position.Position3D;
 import javax.swing.*;
 import java.awt.*;
 
+import static de.dofe.ev3.Paper.*;
+
 /**
  * This class is a drop-in replacement for Robot.
  * <br>
@@ -17,10 +19,8 @@ public class Visualizer extends Robot {
     private Position3D currentPosition;
     private boolean zActive;
 
-    private static final int A4_WIDTH = 2480;
-    private static final int A4_HEIGHT = 3508;
+    // Paper zoom for easier display on Full HD screens
     private static final float VIEW_SCALE_FACTOR = 0.25f;
-    private static final float DRAW_SCALE_FACTOR = 0.6f;
 
     private final GPanel panel;
 
@@ -31,8 +31,11 @@ public class Visualizer extends Robot {
         JFrame frame = new JFrame("Plott3r Visualizer");
         panel = new GPanel();
 
-        panel.setPreferredSize(new Dimension((int) (A4_WIDTH * VIEW_SCALE_FACTOR), (int) (A4_HEIGHT * VIEW_SCALE_FACTOR)));
-        frame.setPreferredSize(new Dimension((int) (A4_WIDTH * VIEW_SCALE_FACTOR), (int) (A4_HEIGHT * VIEW_SCALE_FACTOR)));
+        double paperPxWidth = A4_WIDTH_MM * (DPI / MM_PER_INCH);
+        double paperPxHeight = A4_HEIGHT_MM * (DPI / MM_PER_INCH);
+
+        panel.setPreferredSize(new Dimension((int) (paperPxWidth * VIEW_SCALE_FACTOR), (int) (paperPxHeight * VIEW_SCALE_FACTOR)));
+        frame.setPreferredSize(new Dimension((int) (paperPxWidth * VIEW_SCALE_FACTOR), (int) (paperPxHeight * VIEW_SCALE_FACTOR)));
         frame.getContentPane().add(panel);
         frame.setResizable(false);
         frame.pack();
@@ -69,7 +72,10 @@ public class Visualizer extends Robot {
     public void moveToPosition(Position3D position, int mmSec) {
         zActive = position.isZ();
 
-        Position2D scaledPosition = new Position2D(position.getX() * DRAW_SCALE_FACTOR, position.getY() * DRAW_SCALE_FACTOR);
+        Position2D scaledPosition = new Position2D(
+                (position.getX() + getOffsetX()) * VIEW_SCALE_FACTOR * getScaleFactor(),
+                (position.getY() + getOffsetY()) * VIEW_SCALE_FACTOR * getScaleFactor()
+        );
 
         panel.draw(currentPosition, scaledPosition, zActive ? Color.RED : Color.BLUE);
 

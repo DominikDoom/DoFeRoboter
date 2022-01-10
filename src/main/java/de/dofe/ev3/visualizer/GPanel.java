@@ -17,6 +17,13 @@ public class GPanel extends JPanel {
         Graphics2D g2d = img.createGraphics();
         g2d.setColor(getBackground());
         g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        // Draw safe area
+        g2d.setColor(new Color(53, 255, 53, 255));
+        g2d.fillRect(20, 20, getWidth() - 40, getHeight() - 40);
+        g2d.setColor(getBackground());
+        g2d.fillRect(22, 22, getWidth() - 44, getHeight() - 44);
+
         if (buffer != null) {
             g2d.drawImage(buffer, 0, 0, this);
         }
