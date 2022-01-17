@@ -21,7 +21,7 @@ import static de.dofe.ev3.factory.RobotFactory.Axes;
  * <p>
  * The structure of the robot is defined in the RobotFactory.
  */
-public class Robot extends Subject {
+public class Robot extends Subject implements SvgPrinter {
 
     /**
      * The current position of the tower in relation to the belt & paper
@@ -195,5 +195,10 @@ public class Robot extends Subject {
     public void setStatus(Status status) {
         this.status = status;
         notifyObservers(this.status);
+    }
+
+    @Override
+    public void print(String svg) {
+
     }
 }

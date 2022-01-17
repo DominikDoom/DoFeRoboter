@@ -53,14 +53,15 @@ public class RestApp extends NanoHTTPD {
             // write uploaded file to disk
             FileUtils.writeToFile(new String(fileContent, StandardCharsets.UTF_8), resourcePath + "uploaded.txt");
 
+            // call svg parser
+
+
             // prepare json response
             JSONObject sampleObject = new JSONObject();
             sampleObject.put("status", "ok");
             sampleObject.put("message", "File uploaded successfully. Read " + bytesRead + " bytes in " + iterations + " iterations.");
             sampleObject.put("length", streamLength + " Bytes");
             sampleObject.put(sContentType, session.getHeaders().get(sContentType));
-
-
             return newFixedLengthResponse(Response.Status.OK, mimeTypeJson, sampleObject.toJSONString());
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, mimeTypeHtml, e.getMessage());

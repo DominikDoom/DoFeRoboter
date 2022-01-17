@@ -61,7 +61,7 @@ public class Main {
         robot.registerObserver(webSocket);
 
         // Setup tests
-        Timer timer = new Timer();
+        /* Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
@@ -74,7 +74,7 @@ public class Main {
                     e.printStackTrace();
                 }
             }
-        }, 0L, 5000L);
+        }, 0L, 5000L); */
 
         // Set scaling
         if (fitToScale)
