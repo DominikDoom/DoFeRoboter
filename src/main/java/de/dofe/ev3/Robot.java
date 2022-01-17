@@ -5,6 +5,8 @@ import de.dofe.ev3.axis.MultiPositionAxis;
 import de.dofe.ev3.factory.RobotFactory;
 import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
+import de.dofe.ev3.status.Status;
+import de.dofe.ev3.status.Subject;
 import de.dofe.ev3.visualizer.Visualizer;
 import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
@@ -19,7 +21,7 @@ import static de.dofe.ev3.factory.RobotFactory.Axes;
  * <p>
  * The structure of the robot is defined in the RobotFactory.
  */
-public class Robot {
+public class Robot extends Subject {
 
     /**
      * The current position of the tower in relation to the belt & paper
@@ -34,6 +36,9 @@ public class Robot {
     private double scaleFactor = 1;
     private double offsetX = 0;
     private double offsetY = 0;
+
+    @Getter
+    private Status status = Status.READY;
 
     /**
      * Initializes the Plott3r robot using the {@link RobotFactory}.
@@ -185,5 +190,10 @@ public class Robot {
 
     public double getOffsetY() {
         return offsetY;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+        notifyObservers(this.status);
     }
 }

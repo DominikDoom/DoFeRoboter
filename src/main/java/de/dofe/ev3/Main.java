@@ -5,15 +5,20 @@ import de.dofe.ev3.geometry.svg.path.PathCommand;
 import de.dofe.ev3.geometry.svg.path.PathComponent;
 import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
+import de.dofe.ev3.rest.RestApp;
+import de.dofe.ev3.rest.RobotWebSocket;
 import de.dofe.ev3.visualizer.Visualizer;
 import lejos.hardware.Sound;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
 import static de.dofe.ev3.Paper.*;
 
 public class Main {
+
+    private static final int WEBSOCKET_PORT = 80;
 
     /**
      * Entry point for the program on the EV3 brick.
@@ -35,7 +40,22 @@ public class Main {
             e.printStackTrace();
         }
 
+        try {
+            new RestApp();
+        } catch (IOException e) {
+            System.out.println("Could not start REST server");
+        }
+
         Robot robot = new Visualizer();
+
+        System.out.println("Starting WebSocket...");
+        RobotWebSocket webSocket = new RobotWebSocket(WEBSOCKET_PORT);
+        webSocket.start();
+        System.out.println("WebSocket started on port " + WEBSOCKET_PORT);
+
+        // Setup status Subscriptions
+        System.out.println("Setting up status subscriptions...");
+        robot.registerObserver(webSocket);
 
         // Set scaling
         if (fitToScale)
