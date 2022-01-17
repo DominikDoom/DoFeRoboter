@@ -7,6 +7,7 @@ import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
 import de.dofe.ev3.rest.RestApp;
 import de.dofe.ev3.rest.RobotWebSocket;
+import de.dofe.ev3.status.Status;
 import de.dofe.ev3.visualizer.Visualizer;
 import lejos.hardware.Sound;
 
@@ -41,6 +42,7 @@ public class Main {
         }
 
         Robot robot = new Visualizer();
+        robot.setStatus(Status.READY);
 
         try {
             new RestApp(robot);
