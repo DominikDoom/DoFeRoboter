@@ -2,7 +2,6 @@ package de.dofe.ev3.rest;
 
 import de.dofe.ev3.Robot;
 import de.dofe.ev3.SvgPrinter;
-import de.dofe.ev3.geometry.svg.SVGParser;
 import fi.iki.elonen.NanoHTTPD;
 import lombok.SneakyThrows;
 import org.json.simple.JSONObject;

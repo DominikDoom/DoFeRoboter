@@ -19,6 +19,8 @@ public class SVGParser {
 
     private static final String PARSE_ERROR = "Malformed path (first error at %d)";
 
+    private static final String K_PATH_REGEX = "<path.* d=[\"'](.*)[\"'] .*/?>";
+
     private static final String K_COMMAND_TYPE_REGEX = "^[\t\n\f\r ]*([MLHVZCSQTAmlhvzcsqta])[\t\n\f\r ]*";
     private static final String K_FLAG_REGEX = "^[01]";
     private static final String K_NUMBER_REGEX = "^[+-]?(([0-9]*\\.[0-9]+)|([0-9]+\\.)|([0-9]+))([eE][+-]?[0-9]+)?";
@@ -123,5 +125,14 @@ public class SVGParser {
         }
 
         return tokens;
+    }
+
+    public static List<String> extractPaths(String svg) {
+        List<String> paths = new ArrayList<>();
+        Matcher matcher = Pattern.compile(K_PATH_REGEX).matcher(svg);
+        while (matcher.find()) {
+            paths.add(matcher.group(1));
+        }
+        return paths;
     }
 }

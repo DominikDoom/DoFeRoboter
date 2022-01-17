@@ -3,6 +3,9 @@ package de.dofe.ev3;
 import de.dofe.ev3.axis.DualPositionAxis;
 import de.dofe.ev3.axis.MultiPositionAxis;
 import de.dofe.ev3.factory.RobotFactory;
+import de.dofe.ev3.geometry.svg.SVGParser;
+import de.dofe.ev3.geometry.svg.path.PathCommand;
+import de.dofe.ev3.geometry.svg.path.PathComponent;
 import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
 import de.dofe.ev3.status.Status;
@@ -12,8 +15,10 @@ import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
 import lombok.Getter;
 
-import static de.dofe.ev3.Paper.DPI;
-import static de.dofe.ev3.Paper.MM_PER_INCH;
+import java.text.ParseException;
+import java.util.List;
+
+import static de.dofe.ev3.Paper.*;
 import static de.dofe.ev3.factory.RobotFactory.Axes;
 
 /**
@@ -199,6 +204,118 @@ public class Robot extends Subject implements SvgPrinter {
 
     @Override
     public void print(String svg) {
+        List<String> paths = SVGParser.extractPaths(svg);
 
+        double[] minScale = new double[]{Double.MAX_VALUE, 0, 0};
+        for (String path : paths) {
+            List<PathComponent> components = null;
+            try {
+                components = SVGParser.parse(path);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+            double[] scale = getAutoScale(components);
+            minScale = compareScale(minScale, scale);
+        }
+
+        setScaling(minScale);
+
+        for (String path : paths) {
+            moveToHomePosition();
+
+            List<PathComponent> components = null;
+            try {
+                components = SVGParser.parse(path);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            if (components != null) {
+                Position2D last = new Position2D(0, 0);
+
+                for (PathComponent c : components) {
+                    PathCommand cmd = c.toClass();
+                    if (cmd != null) {
+                        List<Position3D> points = cmd.getNextPos(last);
+                        if (points.size() > 1) {
+                            for (Position3D p : points) {
+                                moveToPosition(p, 20);
+                            }
+                            last = points.get(points.size() - 1);
+                        } else {
+                            Position3D p = points.get(0);
+                            last = p;
+                            moveToPosition(p, 20);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Calculates automatic scaling and offset for the given path.
+     *
+     * @param components The path components.
+     * @return A double array of the form [scale, offsetX, offsetY].
+     */
+    private static double[] getAutoScale(List<PathComponent> components) {
+        // Simulate positions & find max coordinates
+        if (components != null) {
+            double maxX = 0;
+            double maxY = 0;
+            double minX = components.get(0).toClass().getNextPos(new Position2D(0, 0)).get(0).getX();
+            double minY = components.get(0).toClass().getNextPos(new Position2D(0, 0)).get(0).getY();
+
+            Position2D last = new Position2D(0, 0);
+            for (PathComponent c : components) {
+                PathCommand cmd = c.toClass();
+                if (cmd != null) {
+                    List<Position3D> points = cmd.getNextPos(last);
+                    if (points.size() > 1) {
+                        for (Position3D p : points) {
+                            maxX = Math.max(maxX, p.getX());
+                            maxY = Math.max(maxY, p.getY());
+                            minX = Math.min(minX, p.getX());
+                            minY = Math.min(minY, p.getY());
+                        }
+                        last = points.get(points.size() - 1);
+                    } else {
+                        Position3D p = points.get(0);
+                        last = p;
+                        maxX = Math.max(maxX, p.getX());
+                        maxY = Math.max(maxY, p.getY());
+                        minX = Math.min(minX, p.getX());
+                        minY = Math.min(minY, p.getY());
+                    }
+                }
+            }
+            if (maxX == 0 || maxY == 0)
+                throw new UnsupportedOperationException("No maximum coordinates found.");
+
+            // Scale coordinates to fit on A4 paper
+            double offsetX = 0;
+            double offsetY = 0;
+            double safetyPx = SAFETY_MARGIN_MM * (DPI / MM_PER_INCH);
+            if (minX < safetyPx)
+                offsetX = safetyPx - minX;
+            if (minY < SAFETY_MARGIN_MM * (DPI / MM_PER_INCH))
+                offsetY = safetyPx - minY;
+
+            double paperX = (A4_WIDTH_MM - SAFETY_MARGIN_MM) * (DPI / MM_PER_INCH);
+            double paperY = (A4_HEIGHT_MM - SAFETY_MARGIN_MM) * (DPI / MM_PER_INCH);
+            double scaleX = paperX / (maxX + offsetX);
+            double scaleY = paperY / (maxY + offsetY);
+
+            // Return scale
+            return new double[]{Math.min(scaleX, scaleY), offsetX, offsetY};
+        }
+
+        throw new UnsupportedOperationException("No components found.");
+    }
+
+    private double[] compareScale(double[] scale, double[] scale2) {
+        return scale2[0] < scale[0] ? scale2 : scale;
     }
 }
