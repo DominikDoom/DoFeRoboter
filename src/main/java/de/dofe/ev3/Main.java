@@ -7,12 +7,15 @@ import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
 import de.dofe.ev3.rest.RestApp;
 import de.dofe.ev3.rest.RobotWebSocket;
+import de.dofe.ev3.status.Status;
 import de.dofe.ev3.visualizer.Visualizer;
 import lejos.hardware.Sound;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import static de.dofe.ev3.Paper.*;
 
@@ -56,6 +59,22 @@ public class Main {
         // Setup status Subscriptions
         System.out.println("Setting up status subscriptions...");
         robot.registerObserver(webSocket);
+
+        // Setup tests
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(5000);
+                    robot.setStatus(Status.READY);
+                    Thread.sleep(5000);
+                    robot.setStatus(Status.PRINTING);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 0L, 5000L);
 
         // Set scaling
         if (fitToScale)

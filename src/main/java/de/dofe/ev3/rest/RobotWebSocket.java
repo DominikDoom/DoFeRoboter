@@ -16,25 +16,28 @@ import java.util.Collection;
  */
 public class RobotWebSocket extends WebSocketServer implements StatusObserver {
 
+    private Status lastStatus;
+
     public RobotWebSocket( int port ) {
         super( new InetSocketAddress( port ) );
     }
 
     @Override
     public void onOpen( WebSocket conn, ClientHandshake handshake ) {
-        this.sendToAll( "New connection established: " + handshake.getResourceDescriptor() );
         log( "Opened connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress() );
+        JSONObject json = new JSONObject();
+        json.put( "status", lastStatus.toString() );
+        json.put("timestamp", System.currentTimeMillis());
+        sendToAll( json.toJSONString() );
     }
 
     @Override
     public void onClose( WebSocket conn, int code, String reason, boolean remote ) {
-        this.sendToAll( "EV3 Connection closed: " + conn.getRemoteSocketAddress().getAddress().getHostAddress() );
         log( "Closed connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress() + " (" + code + "): ");
     }
 
     @Override
     public void onMessage( WebSocket conn, String message ) {
-        this.sendToAll( message );
         log( "From " + conn.getRemoteSocketAddress().getAddress().getHostAddress() + " received: " + message );
     }
 
@@ -52,8 +55,9 @@ public class RobotWebSocket extends WebSocketServer implements StatusObserver {
      * Pipelines the current state of the EV3 to all connected clients.
      */
     private void sendStatusUpdate(Status status) {
+        lastStatus = status;
         JSONObject json = new JSONObject();
-        json.put( "status", status );
+        json.put( "status", status.toString() );
         json.put("timestamp", System.currentTimeMillis());
         sendToAll( json.toJSONString() );
     }

@@ -60,6 +60,7 @@ public class RestApp extends NanoHTTPD {
             sampleObject.put("length", streamLength + " Bytes");
             sampleObject.put(sContentType, session.getHeaders().get(sContentType));
 
+
             return newFixedLengthResponse(Response.Status.OK, mimeTypeJson, sampleObject.toJSONString());
         } catch (Exception e) {
             return newFixedLengthResponse(Response.Status.BAD_REQUEST, mimeTypeHtml, e.getMessage());
