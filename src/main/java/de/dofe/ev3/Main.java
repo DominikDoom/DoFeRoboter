@@ -7,15 +7,12 @@ import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
 import de.dofe.ev3.rest.RestApp;
 import de.dofe.ev3.rest.RobotWebSocket;
-import de.dofe.ev3.status.Status;
 import de.dofe.ev3.visualizer.Visualizer;
 import lejos.hardware.Sound;
 
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import static de.dofe.ev3.Paper.*;
 
@@ -43,13 +40,14 @@ public class Main {
             e.printStackTrace();
         }
 
+        Robot robot = new Visualizer();
+
         try {
-            new RestApp();
+            new RestApp(robot);
         } catch (IOException e) {
             System.out.println("Could not start REST server");
         }
 
-        Robot robot = new Visualizer();
 
         System.out.println("Starting WebSocket...");
         RobotWebSocket webSocket = new RobotWebSocket(WEBSOCKET_PORT);

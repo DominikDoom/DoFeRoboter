@@ -16,7 +16,7 @@ import java.util.Collection;
  */
 public class RobotWebSocket extends WebSocketServer implements StatusObserver {
 
-    private Status lastStatus;
+    private Status lastStatus = Status.UNDEFINED;
 
     public RobotWebSocket( int port ) {
         super( new InetSocketAddress( port ) );
@@ -34,6 +34,10 @@ public class RobotWebSocket extends WebSocketServer implements StatusObserver {
     @Override
     public void onClose( WebSocket conn, int code, String reason, boolean remote ) {
         log( "Closed connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress() + " (" + code + "): ");
+        JSONObject json = new JSONObject();
+        json.put( "status", Status.UNDEFINED.toString() );
+        json.put("timestamp", System.currentTimeMillis());
+        sendToAll( json.toJSONString() );
     }
 
     @Override

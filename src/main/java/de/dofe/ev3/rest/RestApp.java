@@ -1,6 +1,8 @@
 package de.dofe.ev3.rest;
 
-import de.dofe.ev3.util.FileUtils;
+import de.dofe.ev3.Robot;
+import de.dofe.ev3.SvgPrinter;
+import de.dofe.ev3.geometry.svg.SVGParser;
 import fi.iki.elonen.NanoHTTPD;
 import lombok.SneakyThrows;
 import org.json.simple.JSONObject;
@@ -15,11 +17,12 @@ public class RestApp extends NanoHTTPD {
     private static final String mimeTypeJson = "application/json";
     private static final String sContentLength = "content-length";
     private static final String sContentType = "content-type";
-    // TODO: update path
-    private static final String resourcePath = "/some/path/to/resources";
 
-    public RestApp() throws IOException {
+    private final SvgPrinter robot;
+
+    public RestApp(Robot robot) throws IOException {
         super(8080);
+        this.robot = robot;
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         System.out.println("Running...");
     }
@@ -51,10 +54,10 @@ public class RestApp extends NanoHTTPD {
             }
 
             // write uploaded file to disk
-            FileUtils.writeToFile(new String(fileContent, StandardCharsets.UTF_8), resourcePath + "uploaded.txt");
+            String upload = new String(fileContent, StandardCharsets.UTF_8);
 
-            // call svg parser
-
+            // call print method
+            robot.print(upload);
 
             // prepare json response
             JSONObject sampleObject = new JSONObject();
