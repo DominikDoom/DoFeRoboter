@@ -11,6 +11,7 @@ import java.io.IOException;
 public class Main {
 
     private static final int WEBSOCKET_PORT = 80;
+    public static RobotWebSocket webSocket = null;
 
     /**
      * Entry point for the program on the EV3 brick.
@@ -19,7 +20,7 @@ public class Main {
      */
     @SuppressWarnings("ConstantConditions")
     public static void main(String[] args) {
-        Robot robot = new Visualizer();
+        Robot robot = new Robot();
 
         try {
             new RestApp(robot);
@@ -28,7 +29,7 @@ public class Main {
         }
 
         System.out.println("Starting WebSocket...");
-        RobotWebSocket webSocket = new RobotWebSocket(WEBSOCKET_PORT);
+        webSocket = new RobotWebSocket(WEBSOCKET_PORT);
         webSocket.start();
         System.out.println("WebSocket started on port " + WEBSOCKET_PORT);
 
@@ -44,6 +45,4 @@ public class Main {
     }
 
     // TODO Advanced geometry (non-cubic curves, transforms, ...)
-
-    // TODO Prepare paper in tray
 }

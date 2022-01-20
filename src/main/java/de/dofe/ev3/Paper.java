@@ -11,7 +11,7 @@ public final class Paper {
         throw new IllegalStateException("Utility class");
     }
 
-    public static final int A4_WIDTH_MM = 210;
+    public static final int A4_WIDTH_MM = 170;
     public static final int A4_HEIGHT_MM = 297;
     public static final int DPI = 300;
     public static final float MM_PER_INCH = 25.4f;

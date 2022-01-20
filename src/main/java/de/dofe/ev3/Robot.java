@@ -11,6 +11,7 @@ import de.dofe.ev3.position.Position3D;
 import de.dofe.ev3.status.Status;
 import de.dofe.ev3.status.Subject;
 import de.dofe.ev3.visualizer.Visualizer;
+import lejos.hardware.Sound;
 import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
 import lombok.Getter;
@@ -34,8 +35,11 @@ public class Robot extends Subject implements SvgPrinter {
     @Getter
     private Position3D currentPosition;
 
+    @Getter
     private final MultiPositionAxis xAxis;
+    @Getter
     private final MultiPositionAxis yAxis;
+    @Getter
     private final DualPositionAxis zAxis;
 
     private double scaleFactor = 1;
@@ -72,20 +76,9 @@ public class Robot extends Subject implements SvgPrinter {
     }
 
     /**
-     * Moves the paper to the base position in the tray.
+     * Sets the scaling and offset of the path.
+     * @param scaling the component array
      */
-    public void preparePaper() {
-        if (yAxis.getSensor().isActive()) {
-            while (yAxis.getSensor().isActive()) {
-                yAxis.getMotor().backward();
-            }
-            yAxis.getMotor().stop();
-        } else {
-            Delay.msDelay(500);
-            preparePaper();
-        }
-    }
-
     public void setScaling(double[] scaling) {
         scaleFactor = scaling[0];
         offsetX = scaling[1];
@@ -99,6 +92,16 @@ public class Robot extends Subject implements SvgPrinter {
      */
     protected void moveToHomePosition() {
         zAxis.deactivate();
+        resetXAxis();
+        resetYAxis();
+        this.currentPosition = new Position3D(0, 0, false);
+        this.resetTachoCounts();
+    }
+
+    /**
+     * Resets the x position using the touch sensor to detect the bound.
+     */
+    private void resetXAxis() {
         xAxis.getMotor().setSpeed(50);
         while (!xAxis.getSensor().isActive()) {
             xAxis.getMotor().backward();
@@ -107,8 +110,25 @@ public class Robot extends Subject implements SvgPrinter {
         xAxis.getMotor().forward();
         Delay.msDelay(200);
         xAxis.getMotor().stop();
-        this.currentPosition = new Position3D(0, 0, false);
-        this.resetTachoCounts();
+    }
+
+    /**
+     * Resets the y position using the light sensor to detect the bound.
+     */
+    private void resetYAxis() {
+        yAxis.getMotor().setSpeed(50);
+
+        if (yAxis.getSensor().isActive()) {
+            while (yAxis.getSensor().isActive()) {
+                yAxis.getMotor().backward();
+            }
+        }
+
+        while (!yAxis.getSensor().isActive()) {
+            yAxis.getMotor().forward();
+        }
+
+        yAxis.getMotor().stop();
     }
 
     /**
@@ -251,6 +271,9 @@ public class Robot extends Subject implements SvgPrinter {
                 }
             }
         }
+
+        moveToHomePosition();
+        Sound.beep();
     }
 
 

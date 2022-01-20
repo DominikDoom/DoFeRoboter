@@ -53,7 +53,7 @@ public class DualPositionAxis extends Axis {
      * Moves the axis either up or down by a fixed amount,
      * depending on the current state.
      */
-    private void toggle() {
+    public void toggle() {
         this.active = !this.active;
         this.getMotor().rotate(this.active ? -90 : 90);
         Delay.msDelay(500);
