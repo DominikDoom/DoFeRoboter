@@ -49,11 +49,6 @@ public class Visualizer extends Robot {
     }
 
     @Override
-    public void preparePaper() {
-        // Not needed in visualizer
-    }
-
-    @Override
     public void moveToHomePosition() {
         this.currentPosition = new Position3D(0, 0, false);
     }

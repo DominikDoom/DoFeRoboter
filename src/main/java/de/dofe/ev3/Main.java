@@ -2,16 +2,23 @@ package de.dofe.ev3;
 
 import de.dofe.ev3.rest.RestApp;
 import de.dofe.ev3.rest.RobotWebSocket;
+import de.dofe.ev3.rest.StatsHandler;
 import de.dofe.ev3.status.Status;
 import de.dofe.ev3.visualizer.Visualizer;
 import lejos.hardware.Sound;
+import lombok.Getter;
 
 import java.io.IOException;
 
 public class Main {
 
     private static final int WEBSOCKET_PORT = 80;
-    public static RobotWebSocket webSocket = null;
+
+    @Getter
+    private static Robot robot;
+
+    @Getter
+    private static StatsHandler statsHandler;
 
     /**
      * Entry point for the program on the EV3 brick.
@@ -20,16 +27,18 @@ public class Main {
      */
     @SuppressWarnings("ConstantConditions")
     public static void main(String[] args) {
-        Robot robot = new Robot();
+        robot = new Robot();
+
+        statsHandler = new StatsHandler();
 
         try {
-            new RestApp(robot);
+            new RestApp();
         } catch (IOException e) {
             System.out.println("Could not start REST server");
         }
 
         System.out.println("Starting WebSocket...");
-        webSocket = new RobotWebSocket(WEBSOCKET_PORT);
+        RobotWebSocket webSocket = new RobotWebSocket(WEBSOCKET_PORT);
         webSocket.start();
         System.out.println("WebSocket started on port " + WEBSOCKET_PORT);
 

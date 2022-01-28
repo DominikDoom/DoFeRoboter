@@ -1,45 +1,62 @@
 package de.dofe.ev3.rest;
 
+import de.dofe.ev3.Main;
 import de.dofe.ev3.Robot;
-import de.dofe.ev3.SvgPrinter;
-import de.dofe.ev3.status.Status;
 import fi.iki.elonen.NanoHTTPD;
 import lombok.SneakyThrows;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 public class RestApp extends NanoHTTPD {
 
+    /** Mime types for response. */
     private static final String mimeTypeHtml = "text/html";
     private static final String mimeTypeJson = "application/json";
-    private static final String sContentLength = "content-length";
-    private static final String sContentType = "content-type";
 
+    /** The robot instance */
     private final Robot robot;
 
-    public RestApp(Robot robot) throws IOException {
+    /**
+     * Constructor for the RestApp class
+     * @throws IOException if the server cannot be started
+     */
+    public RestApp() throws IOException {
         super(8080);
-        this.robot = robot;
+        this.robot = Main.getRobot();
         start(NanoHTTPD.SOCKET_READ_TIMEOUT, false);
         System.out.println("Running...");
     }
 
+    /**
+     * Handles the request and returns the response
+     *
+     * <ul>
+     *     <li><b>GET /kill</b> -> kills the server</li>
+     *     <li><b>GET /zaxis</b> -> toggles z-axis and returns the current state</li>
+     *     <li><b>GET /debug</b> -> displays debug information including the current states</li>
+     * </ul>
+     *
+     * @param session the session
+     * @return the response
+     */
+    @SuppressWarnings("unchecked")
     @SneakyThrows
     @Override
     public Response serve(IHTTPSession session) {
 
-        if (session.getMethod().equals(Method.POST) && session.getUri().equals("/upload") && session.getHeaders().get(sContentLength) != null) {
-            return postUpload(session);
-        } else if (session.getMethod().equals(Method.GET) && session.getUri().equals("/kill")) {
+        // kill the robot if the user wants to
+        if (session.getMethod().equals(Method.GET) && session.getUri().equals("/kill")) {
             System.exit(0);
-        } else if (session.getMethod().equals(Method.GET) && session.getUri().equals("/zaxis")) {
+        }
+        // toggle the z axis
+        else if (session.getMethod().equals(Method.GET) && session.getUri().equals("/zaxis")) {
             // to do: remove public access after testing
             robot.getZAxis().toggle();
             return newFixedLengthResponse(Response.Status.OK, mimeTypeHtml, "<html><body><h1>Z-Axis</h1><p>Z-Axis: " + robot.getZAxis().isActive() + "</p></body></html>");
-        } else if (session.getMethod().equals(Method.GET) && session.getUri().equals("/debug")) {
+        }
+        // debugging endpoint, displaying little information about the robots states
+        else if (session.getMethod().equals(Method.GET) && session.getUri().equals("/debug")) {
             JSONObject sampleObject = new JSONObject();
             sampleObject.put("status", "ok");
             sampleObject.put("z (active)", robot.getYAxis().getSensor().isActive());
@@ -47,43 +64,18 @@ public class RestApp extends NanoHTTPD {
             sampleObject.put("y", robot.getCurrentPosition().getY());
             return newFixedLengthResponse(Response.Status.OK, mimeTypeJson, sampleObject.toJSONString());
         }
-
-        return newFixedLengthResponse(Response.Status.BAD_REQUEST, mimeTypeHtml, "Invalid request");
-    }
-
-    @SuppressWarnings("unchecked")
-    public Response postUpload(IHTTPSession session) {
-        int streamLength = Integer.parseInt(session.getHeaders().get(sContentLength));
-        byte[] fileContent = new byte[streamLength];
-        try {
-            // Read the file content
-            InputStream input = session.getInputStream();
-            int bytesRead = 0;
-            int iterations = 0;
-            while (bytesRead < streamLength) {
-                int thisRead = input.read(fileContent, bytesRead, streamLength - bytesRead);
-                bytesRead += thisRead;
-                iterations++;
-            }
-
-            String upload = new String(fileContent, StandardCharsets.UTF_8);
-            Thread thread = new Thread(() -> robot.print(upload));
-            thread.start();
-
-            // prepare json response
+        // stats endpoint
+        else if (session.getMethod().equals(Method.GET) && session.getUri().equals("/stats")) {
             JSONObject sampleObject = new JSONObject();
-            sampleObject.put("status", "ok");
-            sampleObject.put("message", "File uploaded successfully. Read " + bytesRead + " bytes in " + iterations + " iterations.");
-            sampleObject.put("length", streamLength + " Bytes");
-            sampleObject.put(sContentType, session.getHeaders().get(sContentType));
-            Response resp =  newFixedLengthResponse(Response.Status.OK, mimeTypeJson, sampleObject.toJSONString());
-            resp.addHeader("Access-Control-Allow-Origin", "*");
-            resp.addHeader("Access-Control-Allow-Methods", "POST; GET");
-
-            return resp;
-
-        } catch (Exception e) {
-            return newFixedLengthResponse(Response.Status.BAD_REQUEST, mimeTypeHtml, e.getMessage());
+            sampleObject.put("totalPrints", Main.getStatsHandler().getTotalPrints());
+            sampleObject.put("avgPrintTime", Main.getStatsHandler().getAveragePrintTime());
+            sampleObject.put("pathsParsed", Main.getStatsHandler().getPathsParsed());
+            Response response = newFixedLengthResponse(Response.Status.OK, mimeTypeJson, sampleObject.toJSONString());
+            response.addHeader("Access-Control-Allow-Origin", "*");
+            response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            return response;
         }
+        // returned if the requested endpoint is not found
+        return newFixedLengthResponse(Response.Status.BAD_REQUEST, mimeTypeHtml, "Invalid request");
     }
 }

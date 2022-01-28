@@ -1,5 +1,6 @@
 package de.dofe.ev3.rest;
 
+import com.google.gson.Gson;
 import de.dofe.ev3.status.Status;
 import de.dofe.ev3.status.StatusObserver;
 import org.java_websocket.WebSocket;
@@ -14,6 +15,7 @@ import java.util.Collection;
 /**
  * A simple WebSocketServer
  */
+@SuppressWarnings("unchecked")
 public class RobotWebSocket extends WebSocketServer implements StatusObserver {
 
     private Status lastStatus = Status.UNDEFINED;
@@ -25,24 +27,37 @@ public class RobotWebSocket extends WebSocketServer implements StatusObserver {
     @Override
     public void onOpen( WebSocket conn, ClientHandshake handshake ) {
         log( "Opened connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress() );
-        JSONObject json = new JSONObject();
-        json.put( "status", lastStatus.toString() );
-        json.put("timestamp", System.currentTimeMillis());
-        sendToAll( json.toJSONString() );
+        sendStatusUpdate(lastStatus);
     }
 
     @Override
     public void onClose( WebSocket conn, int code, String reason, boolean remote ) {
         log( "Closed connection from " + conn.getRemoteSocketAddress().getAddress().getHostAddress() + " (" + code + "): ");
-        JSONObject json = new JSONObject();
-        json.put( "status", Status.UNDEFINED.toString() );
-        json.put("timestamp", System.currentTimeMillis());
-        sendToAll( json.toJSONString() );
+        Status statusBefore = lastStatus;
+        sendStatusUpdate(Status.UNDEFINED);
+        lastStatus = statusBefore;
     }
 
     @Override
     public void onMessage( WebSocket conn, String message ) {
         log( "From " + conn.getRemoteSocketAddress().getAddress().getHostAddress() + " received: " + message );
+
+        // Map the message to a Status
+        Gson gson = new Gson();
+        FileStore fileStore = gson.fromJson(message, FileStore.class);
+
+        // Send response to client
+        JSONObject json = new JSONObject();
+        json.put( "status", "ok" );
+        json.put("type", "upload");
+        json.put("timestamp", System.currentTimeMillis());
+        conn.send( json.toJSONString() );
+
+        // Print the file store asynchronously
+        if (fileStore.getType().equals("upload")) {
+            Thread thread = new Thread(fileStore::store);
+            thread.start();
+        }
     }
 
     @Override
@@ -61,6 +76,7 @@ public class RobotWebSocket extends WebSocketServer implements StatusObserver {
     private void sendStatusUpdate(Status status) {
         lastStatus = status;
         JSONObject json = new JSONObject();
+        json.put( "type", "status" );
         json.put( "status", status.toString() );
         json.put("timestamp", System.currentTimeMillis());
         sendToAll( json.toJSONString() );

@@ -14,7 +14,9 @@ import de.dofe.ev3.visualizer.Visualizer;
 import lejos.hardware.Sound;
 import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
+import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.text.ParseException;
 import java.util.List;
@@ -46,8 +48,19 @@ public class Robot extends Subject implements SvgPrinter {
     private double offsetX = 0;
     private double offsetY = 0;
 
+    /**
+     * The current status of the robot
+     */
     @Getter
     private Status status = Status.READY;
+
+    /**
+     * Statistics about the robot
+     */
+    @Getter
+    @Setter
+    private int pathsParsed = 0;
+
 
     /**
      * Initializes the Plott3r robot using the {@link RobotFactory}.
@@ -240,6 +253,9 @@ public class Robot extends Subject implements SvgPrinter {
 
         setScaling(minScale);
 
+        // set statistics
+        setPathsParsed(paths.size());
+
         for (String path : paths) {
             moveToHomePosition();
 
@@ -273,7 +289,6 @@ public class Robot extends Subject implements SvgPrinter {
         }
 
         moveToHomePosition();
-        Sound.beep();
     }
 
 
