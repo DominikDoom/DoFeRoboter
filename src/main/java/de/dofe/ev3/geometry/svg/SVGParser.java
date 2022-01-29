@@ -8,6 +8,10 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * This class provides methods to parse SVG files into
+ * a format that is usable for our Plott3r implementation.
+ */
 public class SVGParser {
 
     private SVGParser() {
@@ -43,6 +47,15 @@ public class SVGParser {
         grammar.put("A", new String[]{K_NUMBER_REGEX, K_NUMBER_REGEX, K_COORDINATE_REGEX, K_FLAG_REGEX, K_FLAG_REGEX, K_COORDINATE_REGEX, K_COORDINATE_REGEX});
     }
 
+    /**
+     * Parses coordinate & argument components for the given path command.
+     *
+     * @param type   The path command to parse.
+     * @param path   The path string.
+     * @param cursor The cursor position (to trim the path string up to the current inspected command).
+     * @return The parsed path components. The HashMap key is the cursor position, while the values are the
+     * correlating components.
+     */
     private static LinkedHashMap<Integer, ArrayList<ArrayList<String>>> components(String type, String path, int cursor) throws ParseException {
         final String[] expectedRegexList = grammar.get(type.toUpperCase());
 
@@ -88,6 +101,12 @@ public class SVGParser {
         throw new ParseException(String.format(PARSE_ERROR, cursor), cursor);
     }
 
+    /**
+     * Parses the given svg path into a list of drawable path commands.
+     *
+     * @param path The path string.
+     * @return A list of {@link PathComponent} data objects.
+     */
     public static List<PathComponent> parse(String path) throws ParseException {
         int cursor = 0;
         ArrayList<PathComponent> tokens = new ArrayList<>();
@@ -127,6 +146,12 @@ public class SVGParser {
         return tokens;
     }
 
+    /**
+     * Extracts path strings from raw svg file contents.
+     *
+     * @param svg The raw svg string.
+     * @return A list of path strings.
+     */
     public static List<String> extractPaths(String svg) {
         List<String> paths = new ArrayList<>();
         Matcher matcher = Pattern.compile(K_PATH_REGEX).matcher(svg);
@@ -136,6 +161,13 @@ public class SVGParser {
         return paths;
     }
 
+    /**
+     * Extracts polylines from raw svg file contents
+     * & converts it into a path for further parsing.
+     *
+     * @param svg The raw svg string.
+     * @return A list of path-converted polyline strings.
+     */
     public static List<String> extractPolylines(String svg) {
         List<String> paths = new ArrayList<>();
         Matcher matcher = Pattern.compile(K_POLYLINE_REGEX).matcher(svg);
@@ -145,6 +177,15 @@ public class SVGParser {
         return paths;
     }
 
+    /**
+     * Extracts polygons from raw svg file contents
+     * & converts it into a path for further parsing.
+     * Same as {@link #extractPolylines(String)}, except
+     * that the polygon is closed.
+     *
+     * @param svg The raw svg string.
+     * @return A list of path-converted polygon strings.
+     */
     public static List<String> extractPolygons(String svg) {
         List<String> paths = new ArrayList<>();
         Matcher matcher = Pattern.compile(K_POLYGON_REGEX).matcher(svg);
@@ -154,6 +195,16 @@ public class SVGParser {
         return paths;
     }
 
+    /**
+     * Extracts rectangles from raw svg file contents.
+     * Since the robot cannot draw filled rectangles,
+     * they are also converted into paths by calculating
+     * the four corners of the rectangle and
+     * treating them as polygon coordinates.
+     *
+     * @param svg The raw svg string.
+     * @return A list of path-converted rectangle strings.
+     */
     public static List<String> extractRects(String svg) {
         List<String> paths = new ArrayList<>();
         Matcher matcher = Pattern.compile(K_RECT_REGEX).matcher(svg);

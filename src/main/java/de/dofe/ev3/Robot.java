@@ -232,8 +232,22 @@ public class Robot extends Subject implements SvgPrinter {
         notifyObservers(this.status);
     }
 
+    /**
+     * Prints all supported geometry in the given svg code.
+     * <br>
+     * Supported tags are:
+     * <ul>
+     *     <li>&lt;path&gt;</li>
+     *     <li>&lt;rect&gt; (Only in the order x y width height)</li>
+     *     <li>&lt;polyline&gt;</li>
+     *     <li>&lt;polygon&gt;</li>
+     * </ul>
+     *
+     * @param svg The svg string to be printed.
+     */
     @Override
     public void print(String svg) {
+        // Extract data from supported tags
         List<String> paths = SVGParser.extractPaths(svg);
         paths.addAll(SVGParser.extractPolylines(svg));
         paths.addAll(SVGParser.extractPolygons(svg));
@@ -241,7 +255,6 @@ public class Robot extends Subject implements SvgPrinter {
 
         double[] bounds = new double[4]; // minX, minY, maxX, maxY
         ArrayList<List<PathComponent>> parseCache = new ArrayList<>();
-
         totalPaths = paths.size();
 
         for (String path : paths) {
@@ -276,12 +289,14 @@ public class Robot extends Subject implements SvgPrinter {
             return Double.compare(distance1, distance2);
         });
 
+        // Set scale factor
         double[] scale = getAutoScale(bounds);
         setScaling(scale);
 
-        // set statistics
+        // Set statistics
         setPathsParsed(paths.size());
 
+        // Draw parsed paths
         for (List<PathComponent> components : parseCache) {
             moveToHomePosition();
             currentPathIndex++;
@@ -318,6 +333,7 @@ public class Robot extends Subject implements SvgPrinter {
             }
         }
 
+        // Reset to home position after drawing
         moveToHomePosition();
     }
 
