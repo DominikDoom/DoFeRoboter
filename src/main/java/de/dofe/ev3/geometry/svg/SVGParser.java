@@ -4,10 +4,7 @@ import de.dofe.ev3.geometry.svg.path.PathCommandType;
 import de.dofe.ev3.geometry.svg.path.PathComponent;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,7 +16,10 @@ public class SVGParser {
 
     private static final String PARSE_ERROR = "Malformed path (first error at %d)";
 
-    private static final String K_PATH_REGEX = "<path.* d=[\"'](.*)[\"'] .*/?>";
+    private static final String K_PATH_REGEX = "<path.* d=[\"'](.*?)[\"'].*/?>";
+    private static final String K_POLYLINE_REGEX = "<polyline.* points=[\"'](.*?)[\"'].*/?>";
+    private static final String K_POLYGON_REGEX = "<polygon.* points=[\"'](.*?)[\"'].*/?>";
+    private static final String K_RECT_REGEX = "<rect.* x=[\"'](.*?)[\"'] y=[\"'](.*?)[\"'] width=[\"'](.*?)[\"'] height=[\"'](.*?)[\"'].*/?>";
 
     private static final String K_COMMAND_TYPE_REGEX = "^[\t\n\f\r ]*([MLHVZCSQTAmlhvzcsqta])[\t\n\f\r ]*";
     private static final String K_FLAG_REGEX = "^[01]";
@@ -132,6 +132,38 @@ public class SVGParser {
         Matcher matcher = Pattern.compile(K_PATH_REGEX).matcher(svg);
         while (matcher.find()) {
             paths.add(matcher.group(1));
+        }
+        return paths;
+    }
+
+    public static List<String> extractPolylines(String svg) {
+        List<String> paths = new ArrayList<>();
+        Matcher matcher = Pattern.compile(K_POLYLINE_REGEX).matcher(svg);
+        while (matcher.find()) {
+            paths.add("M " + matcher.group(1));
+        }
+        return paths;
+    }
+
+    public static List<String> extractPolygons(String svg) {
+        List<String> paths = new ArrayList<>();
+        Matcher matcher = Pattern.compile(K_POLYGON_REGEX).matcher(svg);
+        while (matcher.find()) {
+            paths.add("M " + matcher.group(1) + " Z");
+        }
+        return paths;
+    }
+
+    public static List<String> extractRects(String svg) {
+        List<String> paths = new ArrayList<>();
+        Matcher matcher = Pattern.compile(K_RECT_REGEX).matcher(svg);
+        while (matcher.find()) {
+            double x = Double.parseDouble(matcher.group(1));
+            double y = Double.parseDouble(matcher.group(2));
+            double width = Double.parseDouble(matcher.group(3));
+            double height = Double.parseDouble(matcher.group(4));
+
+            paths.add(String.format(Locale.ENGLISH, "M %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f Z", x, y, x + width, y, x + width, y + height, x, y + height));
         }
         return paths;
     }

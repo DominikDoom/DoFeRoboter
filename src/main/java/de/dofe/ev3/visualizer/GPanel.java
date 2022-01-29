@@ -6,6 +6,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
+import static de.dofe.ev3.Paper.*;
+
 public class GPanel extends JPanel {
     private transient BufferedImage buffer;
 
@@ -18,11 +20,16 @@ public class GPanel extends JPanel {
         g2d.setColor(getBackground());
         g2d.fillRect(0, 0, getWidth(), getHeight());
 
+        int safetyX = (int) ((int) (SAFETY_MARGIN_MM * (DPI / MM_PER_INCH)) * VIEW_SCALE_FACTOR);
+        int safetyY = (int) ((int) (SAFETY_MARGIN_MM * (DPI / MM_PER_INCH)) * VIEW_SCALE_FACTOR);
+
+        System.out.println("Safety margin panel: " + safetyX + "x" + safetyY);
+
         // Draw safe area
         g2d.setColor(new Color(53, 255, 53, 255));
-        g2d.fillRect(20, 20, getWidth() - 40, getHeight() - 40);
+        g2d.fillRect(safetyX, safetyY, getWidth() - safetyX * 2, getHeight() - safetyY * 2);
         g2d.setColor(getBackground());
-        g2d.fillRect(22, 22, getWidth() - 44, getHeight() - 44);
+        g2d.fillRect(safetyX + 2, safetyY + 2, getWidth() - safetyX * 2 - 4, getHeight() - safetyY * 2 - 4);
 
         if (buffer != null) {
             g2d.drawImage(buffer, 0, 0, this);

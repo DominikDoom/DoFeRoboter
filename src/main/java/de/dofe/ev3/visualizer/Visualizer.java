@@ -19,8 +19,7 @@ public class Visualizer extends Robot {
     private Position3D currentPosition;
     private boolean zActive;
 
-    // Paper zoom for easier display on Full HD screens
-    private static final float VIEW_SCALE_FACTOR = 0.25f;
+    private static final boolean SHOW_AGE = true;
 
     private final GPanel panel;
 
@@ -68,11 +67,19 @@ public class Visualizer extends Robot {
         zActive = position.isZ();
 
         Position2D scaledPosition = new Position2D(
-                (position.getX() + getOffsetX()) * VIEW_SCALE_FACTOR * getScaleFactor(),
-                (position.getY() + getOffsetY()) * VIEW_SCALE_FACTOR * getScaleFactor()
+                ((position.getX() * getScaleFactor()) + getOffsetX()) * VIEW_SCALE_FACTOR,
+                ((position.getY() * getScaleFactor()) + getOffsetY()) * VIEW_SCALE_FACTOR
         );
 
-        panel.draw(currentPosition, scaledPosition, zActive ? Color.RED : Color.BLUE);
+        int totalPaths = getTotalPaths();
+        int currentPath = getCurrentPathIndex();
+
+        float alpha = SHOW_AGE ? (currentPath / (float) totalPaths) * 255 : 255f;
+
+        Color moveColor = new Color(0, 0, 255, (int) alpha / 4);
+        Color drawColor = new Color(255, 0, 0, (int) alpha);
+
+        panel.draw(currentPosition, scaledPosition, zActive ? drawColor : moveColor);
 
         this.currentPosition = new Position3D(scaledPosition.getX(), scaledPosition.getY(), zActive);
     }

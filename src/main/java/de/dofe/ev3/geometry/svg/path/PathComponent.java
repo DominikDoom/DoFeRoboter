@@ -28,17 +28,29 @@ public class PathComponent {
                         args[4], args[5],
                         relative);
             case SMOOTH_CURVE_TO:
-                //return new SmoothCurve();
+                System.out.println("Not implemented: Smooth curve");
+                return null;
+            //return new SmoothCurve();
             case QUAD_CURVE_TO:
-                //return new QuadCurve();
+                System.out.println("Not implemented: Quad curve");
+                return null;
+            //return new QuadCurve();
             case SMOOTH_QUAD_CURVE_TO:
-                //return new SmoothQuadCurve();
+                System.out.println("Not implemented: Smooth quad curve");
+                return null;
+            //return new SmoothQuadCurve();
             case ARC_TO:
-                //return new Arc();
+                System.out.println("Not implemented: Arc");
+                return null;
+            //return new Arc();
             case HORIZONTAL_LINE_TO:
-                //return new HorizontalLine();
+                System.out.println("Not implemented: Horizontal line");
+                return null;
+            //return new HorizontalLine();
             case VERTICAL_LINE_TO:
-                //return new VerticalLine();
+                System.out.println("Not implemented: Vertical line");
+                return null;
+            //return new VerticalLine();
             case CLOSE_PATH:
                 return null;
             default:

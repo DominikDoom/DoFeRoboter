@@ -5,20 +5,20 @@ import de.dofe.ev3.axis.MultiPositionAxis;
 import de.dofe.ev3.factory.RobotFactory;
 import de.dofe.ev3.geometry.svg.SVGParser;
 import de.dofe.ev3.geometry.svg.path.PathCommand;
+import de.dofe.ev3.geometry.svg.path.PathCommandType;
 import de.dofe.ev3.geometry.svg.path.PathComponent;
 import de.dofe.ev3.position.Position2D;
 import de.dofe.ev3.position.Position3D;
 import de.dofe.ev3.status.Status;
 import de.dofe.ev3.status.Subject;
 import de.dofe.ev3.visualizer.Visualizer;
-import lejos.hardware.Sound;
 import lejos.robotics.RegulatedMotor;
 import lejos.utility.Delay;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static de.dofe.ev3.Paper.*;
@@ -44,8 +44,11 @@ public class Robot extends Subject implements SvgPrinter {
     @Getter
     private final DualPositionAxis zAxis;
 
+    @Getter
     private double scaleFactor = 1;
+    @Getter
     private double offsetX = 0;
+    @Getter
     private double offsetY = 0;
 
     /**
@@ -60,6 +63,12 @@ public class Robot extends Subject implements SvgPrinter {
     @Getter
     @Setter
     private int pathsParsed = 0;
+
+    // Progress statistics for visualizer opacity
+    @Getter
+    private int totalPaths;
+    @Getter
+    private int currentPathIndex;
 
 
     /**
@@ -165,8 +174,8 @@ public class Robot extends Subject implements SvgPrinter {
         // Pixel to mm conversion
         float dpiFactor = MM_PER_INCH / DPI; // mm/inch / dpi
         Position3D scaledPosition = new Position3D(
-                (position.getX() + offsetX) * dpiFactor * scaleFactor,
-                (position.getY() + offsetY) * dpiFactor * scaleFactor,
+                ((position.getX() * scaleFactor) + offsetX) * dpiFactor,
+                ((position.getY() * scaleFactor) + offsetY) * dpiFactor,
                 position.isZ());
 
         if (position.isZ())
@@ -218,18 +227,6 @@ public class Robot extends Subject implements SvgPrinter {
         zAxis.getMotor().stop();
     }
 
-    public double getScaleFactor() {
-        return scaleFactor;
-    }
-
-    public double getOffsetX() {
-        return offsetX;
-    }
-
-    public double getOffsetY() {
-        return offsetY;
-    }
-
     public void setStatus(Status status) {
         this.status = status;
         notifyObservers(this.status);
@@ -238,52 +235,85 @@ public class Robot extends Subject implements SvgPrinter {
     @Override
     public void print(String svg) {
         List<String> paths = SVGParser.extractPaths(svg);
+        paths.addAll(SVGParser.extractPolylines(svg));
+        paths.addAll(SVGParser.extractPolygons(svg));
+        paths.addAll(SVGParser.extractRects(svg));
 
-        double[] minScale = new double[]{Double.MAX_VALUE, 0, 0};
+        double[] bounds = new double[4]; // minX, minY, maxX, maxY
+        ArrayList<List<PathComponent>> parseCache = new ArrayList<>();
+
+        totalPaths = paths.size();
+
         for (String path : paths) {
+            // Parse path
             List<PathComponent> components = null;
             try {
                 components = SVGParser.parse(path);
+                parseCache.add(components);
             } catch (ParseException e) {
                 e.printStackTrace();
             }
-            double[] scale = getAutoScale(components);
-            minScale = compareScale(minScale, scale);
+
+            // Calculate local bounds
+            double[] localBounds = getLocalBounds(components);
+            // Update global bounds
+            bounds[0] = Math.min(bounds[0], localBounds[0]);
+            bounds[1] = Math.min(bounds[1], localBounds[1]);
+            bounds[2] = Math.max(bounds[2], localBounds[2]);
+            bounds[3] = Math.max(bounds[3], localBounds[3]);
         }
 
-        setScaling(minScale);
+        // Order by x & y offset from 0,0
+        parseCache.sort((o1, o2) -> {
+            double x1 = o1.get(0).getArgs()[0];
+            double y1 = o1.get(0).getArgs()[1];
+            double x2 = o2.get(0).getArgs()[0];
+            double y2 = o2.get(0).getArgs()[1];
+
+            double distance1 = Math.sqrt(x1 * x1 + y1 * y1);
+            double distance2 = Math.sqrt(x2 * x2 + y2 * y2);
+
+            return Double.compare(distance1, distance2);
+        });
+
+        double[] scale = getAutoScale(bounds);
+        setScaling(scale);
 
         // set statistics
         setPathsParsed(paths.size());
 
-        for (String path : paths) {
+        for (List<PathComponent> components : parseCache) {
             moveToHomePosition();
+            currentPathIndex++;
 
-            List<PathComponent> components = null;
-            try {
-                components = SVGParser.parse(path);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
+            Position2D first = null;
+            Position2D last = new Position2D(0, 0);
 
-            if (components != null) {
-                Position2D last = new Position2D(0, 0);
+            for (PathComponent c : components) {
+                if (c.getType() == PathCommandType.CLOSE_PATH) {
+                    if (first == null)
+                        throw new IllegalStateException("Path closed without starting point");
 
-                for (PathComponent c : components) {
-                    PathCommand cmd = c.toClass();
-                    if (cmd != null) {
-                        List<Position3D> points = cmd.getNextPos(last);
-                        if (points.size() > 1) {
-                            for (Position3D p : points) {
-                                moveToPosition(p, 20);
-                            }
-                            last = points.get(points.size() - 1);
-                        } else {
-                            Position3D p = points.get(0);
-                            last = p;
-                            moveToPosition(p, 20);
-                        }
+                    moveToPosition(new Position3D(first, true), 20);
+                    first = null;
+                }
+
+                PathCommand cmd = c.toClass();
+                if (cmd == null)
+                    continue;
+
+                List<Position3D> points = cmd.getNextPos(last);
+                if (first == null) first = points.get(0);
+
+                if (points.size() > 1) {
+                    for (Position3D p : points) {
+                        moveToPosition(p, 20);
                     }
+                    last = points.get(points.size() - 1);
+                } else {
+                    Position3D p = points.get(0);
+                    last = p;
+                    moveToPosition(p, 20);
                 }
             }
         }
@@ -291,14 +321,39 @@ public class Robot extends Subject implements SvgPrinter {
         moveToHomePosition();
     }
 
-
     /**
-     * Calculates automatic scaling and offset for the given path.
+     * Calculates the scale factor and offset for the given bounds.
      *
-     * @param components The path components.
+     * @param bounds the global bounds for a collection of paths.
      * @return A double array of the form [scale, offsetX, offsetY].
      */
-    private static double[] getAutoScale(List<PathComponent> components) {
+    private static double[] getAutoScale(double[] bounds) {
+        // Scale coordinates to fit on A4 paper
+        double offsetX = 0;
+        double offsetY = 0;
+        double safetyPx = SAFETY_MARGIN_MM * (DPI / MM_PER_INCH);
+
+        if (bounds[0] < safetyPx)
+            offsetX = safetyPx - bounds[0];
+        if (bounds[1] < safetyPx)
+            offsetY = safetyPx - bounds[1];
+
+        double paperX = (A4_WIDTH_MM) * (DPI / MM_PER_INCH);
+        double paperY = (A4_HEIGHT_MM) * (DPI / MM_PER_INCH);
+        double scaleX = (paperX - safetyPx * 3) / (bounds[2]);
+        double scaleY = (paperY - safetyPx * 3) / (bounds[3]);
+
+        // Return scale
+        return new double[]{Math.min(scaleX, scaleY), offsetX, offsetY};
+    }
+
+    /**
+     * Calculates the bounding box of a single path.
+     *
+     * @param components The path components.
+     * @return A double array of the form [minX, minY, maxX, maxY].
+     */
+    private static double[] getLocalBounds(List<PathComponent> components) {
         // Simulate positions & find max coordinates
         if (components != null) {
             double maxX = 0;
@@ -332,28 +387,10 @@ public class Robot extends Subject implements SvgPrinter {
             if (maxX == 0 || maxY == 0)
                 throw new UnsupportedOperationException("No maximum coordinates found.");
 
-            // Scale coordinates to fit on A4 paper
-            double offsetX = 0;
-            double offsetY = 0;
-            double safetyPx = SAFETY_MARGIN_MM * (DPI / MM_PER_INCH);
-            if (minX < safetyPx)
-                offsetX = safetyPx - minX;
-            if (minY < SAFETY_MARGIN_MM * (DPI / MM_PER_INCH))
-                offsetY = safetyPx - minY;
-
-            double paperX = (A4_WIDTH_MM - SAFETY_MARGIN_MM) * (DPI / MM_PER_INCH);
-            double paperY = (A4_HEIGHT_MM - SAFETY_MARGIN_MM) * (DPI / MM_PER_INCH);
-            double scaleX = paperX / (maxX + offsetX);
-            double scaleY = paperY / (maxY + offsetY);
-
-            // Return scale
-            return new double[]{Math.min(scaleX, scaleY), offsetX, offsetY};
+            // Return bounds
+            return new double[]{minX, minY, maxX, maxY};
         }
 
         throw new UnsupportedOperationException("No components found.");
-    }
-
-    private double[] compareScale(double[] scale, double[] scale2) {
-        return scale2[0] < scale[0] ? scale2 : scale;
     }
 }
